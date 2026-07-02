@@ -38,7 +38,9 @@ BASE_APPS = [
     'django.contrib.staticfiles',
 ]
 
-PROJECT_APPS = []
+PROJECT_APPS = [
+    'user'
+]
 
 THIRD_WAY_APPS = []
 
