@@ -322,3 +322,23 @@ a {
     font-size: 0.8rem;
     margin-top: 2px;
 }
+
+/* ===== Register page: side-by-side fields ===== */
+.form-row {
+    display: flex;
+    gap: 12px;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+.auth-card-wide {
+    max-width: 440px;
+}
+
+@media (max-width: 480px) {
+    .form-row {
+        flex-direction: column;
+    }
+}

@@ -27,6 +27,9 @@
             <div class="form-group">
                 <label for="id_password">Password</label>
                 <input type="password" name="{{ form.password.name }}" id="id_password">
+                {% if form.password.errors %}
+                    <span class="field-error">{{ form.password.errors.0 }}</span>
+                {% endif %}
             </div>
 
             <button type="submit" class="btn-primary btn-block">Log In</button>
@@ -34,7 +37,7 @@
 
         <div class="auth-footer">
             <a href="#">Forgot password?</a>
-            <p>Don't have an account? <a href="#">Sign up</a></p>
+            <p>Don't have an account? <a href="{% url 'user:register' %}">Sign up</a></p>
         </div>
     </div>
 </div>
