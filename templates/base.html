@@ -1,10 +1,62 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Community Platform{% endblock %}</title>
+
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
 
+    <header class="site-header">
+        <div class="container header-inner">
+            <a href="" class="logo">CommunityHub</a>
+
+            <nav class="main-nav">
+                <a href="">Home</a>
+                <a href="#">Goals</a>
+                <a href="#">Study Groups</a>
+                <a href="#">Challenges</a>
+                <a href="#">Achievements</a>
+            </nav>
+
+            <div class="header-actions">
+                {% if user.is_authenticated %}
+                    <a href="#">{{ user.username }}</a>
+                    <form action="" method="post" class="inline-form">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-link">Logout</button>
+                    </form>
+                {% else %}
+                    <a href="">Login</a>
+                    <a href="" class="btn-primary">Sign Up</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <main class="site-main">
+        <div class="container">
+            {% block content %}
+            {% endblock %}
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container footer-inner">
+            <p>&copy; {% now "Y" %} CommunityHub. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="#">About</a>
+                <a href="#">Contact</a>
+                <a href="#">Privacy Policy</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{% static 'js/base.js' %}"></script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
