@@ -7,13 +7,13 @@
 
     <div class="profile-header">
         <div class="profile-avatar">
-            <img src="{{ profile_user.avatar.url }}" alt="{{ profile_user.username }}">
+            <img src="{{ profile_user.profile.avatar.url }}" alt="{{ profile_user.username }}">
         </div>
 
         <div class="profile-info">
             <h1>{{ profile_user.first_name }} {{ profile_user.last_name }}</h1>
             <p class="profile-username">@{{ profile_user.username }}</p>
-            <p class="profile-bio">{{ profile_user.bio }}</p>
+            <p class="profile-bio">{{ profile_user.profile.bio }}</p>
 
             <div class="profile-meta">
                 <span>Joined {{ profile_user.date_joined }}</span>

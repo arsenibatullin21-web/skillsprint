@@ -25,3 +25,4 @@ class UserProfileView(DetailView):
     template_name = 'user/profile.html'
     context_object_name = 'profile_user'
     pk_url_kwarg = 'user_id'
+
