@@ -39,7 +39,7 @@ BASE_APPS = [
 ]
 
 PROJECT_APPS = [
-    'user'
+    'user.apps.UserConfig'
 ]
 
 THIRD_WAY_APPS = []
