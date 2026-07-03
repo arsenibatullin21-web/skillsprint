@@ -3,6 +3,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import AuthenticationForm, UsernameField, UserCreationForm
 from django.contrib.auth.password_validation import validate_password
 
+from user.models import Profile
+
 
 class UserLoginForm(AuthenticationForm):
     username = UsernameField(required=True)
@@ -35,5 +37,15 @@ class UserRegisterForm(UserCreationForm):
             raise forms.ValidationError('Username already exists!')
 
 
+class UserEditForm(forms.ModelForm):
+
+    class Meta:
+        model = get_user_model()
+        fields = ['first_name', 'last_name']
+
+class ProfileEditForm(forms.ModelForm):
+    class Meta:
+        model = Profile
+        fields = ['display_name', 'bio', 'avatar', 'location', 'website']
 
 

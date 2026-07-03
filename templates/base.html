@@ -25,14 +25,14 @@
 
             <div class="header-actions">
                 {% if user.is_authenticated %}
-                    <a href="#">{{ user.username }}</a>
-                    <form action="" method="post" class="inline-form">
+                    <a href="{% url 'user:profile' user.id %}">{{ user.username }}</a>
+                    <form action="{% url 'user:logout' %}" method="post" class="inline-form">
                         {% csrf_token %}
                         <button type="submit" class="btn-link">Logout</button>
                     </form>
                 {% else %}
-                    <a href="">Login</a>
-                    <a href="" class="btn-primary">Sign Up</a>
+                    <a href="{% url 'user:login' %}">Login</a>
+                    <a href="{% url 'user:register' %}" class="btn-primary">Sign Up</a>
                 {% endif %}
             </div>
         </div>
@@ -40,6 +40,14 @@
 
     <main class="site-main">
         <div class="container">
+            {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                        <p class="message {{ message.tags }}">{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
             {% block content %}
             {% endblock %}
         </div>

@@ -21,7 +21,9 @@
         </div>
 
         <div class="profile-actions">
-            <a href="#" class="btn-primary">Edit Profile</a>
+            {% if request.user == profile_user %}
+                <a href="{% url 'user:profile-edit' %}" class="btn-primary">Edit Profile</a>
+            {% endif %}
         </div>
     </div>
 

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Profile - CommunityHub{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card auth-card-wide">
+        <h1 class="auth-title">Edit profile</h1>
+        <p class="auth-subtitle">Update the information shown on your profile.</p>
+
+        <form method="post" enctype="multipart/form-data" class="auth-form">
+            {% csrf_token %}
+
+            {% if user_form.non_field_errors or profile_form.non_field_errors %}
+                <div class="non-field-errors">
+                    {{ user_form.non_field_errors }}
+                    {{ profile_form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            {% for field in user_form %}
+                <div class="form-group{% if field.errors %} has-error{% endif %}">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {% for error in field.errors %}
+                        <span class="field-error">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+
+            {% for field in profile_form %}
+                <div class="form-group{% if field.errors %} has-error{% endif %}">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {% if field.help_text %}
+                        <span class="field-hint">{{ field.help_text }}</span>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <span class="field-error">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">Save changes</button>
+                <a href="{% url 'user:profile' request.user.pk %}" class="btn-link">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
