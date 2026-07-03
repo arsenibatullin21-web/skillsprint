@@ -42,9 +42,19 @@ PROJECT_APPS = [
     'user.apps.UserConfig'
 ]
 
-THIRD_WAY_APPS = []
+THIRD_WAY_APPS = [
+    'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
+]
 
 INSTALLED_APPS = BASE_APPS + PROJECT_APPS + THIRD_WAY_APPS
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
