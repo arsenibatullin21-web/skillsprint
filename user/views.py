@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user, get_user_model
 from django.contrib.auth.views import LoginView
 from django.shortcuts import render
-from django.views.generic import CreateView
+from django.views.generic import CreateView, DetailView
 from rest_framework.reverse import reverse_lazy
 
 from user.forms import UserLoginForm, UserRegisterForm
@@ -20,3 +20,8 @@ class UserRegisterView(CreateView):
     form_class = UserRegisterForm
     success_url = reverse_lazy('user:login')
 
+class UserProfileView(DetailView):
+    model = get_user_model()
+    template_name = 'user/profile.html'
+    context_object_name = 'profile_user'
+    pk_url_kwarg = 'user_id'

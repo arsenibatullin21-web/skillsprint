@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ profile_user.username }} - Profile{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+
+    <div class="profile-header">
+        <div class="profile-avatar">
+            <img src="{{ profile_user.avatar.url }}" alt="{{ profile_user.username }}">
+        </div>
+
+        <div class="profile-info">
+            <h1>{{ profile_user.first_name }} {{ profile_user.last_name }}</h1>
+            <p class="profile-username">@{{ profile_user.username }}</p>
+            <p class="profile-bio">{{ profile_user.bio }}</p>
+
+            <div class="profile-meta">
+                <span>Joined {{ profile_user.date_joined }}</span>
+            </div>
+        </div>
+
+        <div class="profile-actions">
+            <a href="#" class="btn-primary">Edit Profile</a>
+        </div>
+    </div>
+
+    <div class="profile-stats">
+        <div class="stat-card">
+            <span class="stat-number">{{ goals_count }}</span>
+            <span class="stat-label">Goals</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">{{ groups_count }}</span>
+            <span class="stat-label">Study Groups</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">{{ challenges_completed }}</span>
+            <span class="stat-label">Challenges Done</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">{{ achievements_count }}</span>
+            <span class="stat-label">Achievements</span>
+        </div>
+    </div>
+
+    <div class="profile-tabs">
+        <button class="tab active" data-tab="goals">Learning Goals</button>
+        <button class="tab" data-tab="groups">Study Groups</button>
+        <button class="tab" data-tab="achievements">Achievements</button>
+        <button class="tab" data-tab="activity">Activity</button>
+    </div>
+
+    <div class="profile-content">
+
+        <!-- Learning Goals -->
+        <div class="tab-panel active" id="tab-goals">
+            <div class="goals-list">
+                {% for goal in goals %}
+                <div class="goal-card">
+                    <div class="goal-card-header">
+                        <h3>{{ goal.title }}</h3>
+                        <span class="goal-status">{{ goal.status }}</span>
+                    </div>
+                    <p class="goal-description">{{ goal.description }}</p>
+                    <div class="goal-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: {{ goal.progress_percent }}%"></div>
+                        </div>
+                        <span class="progress-text">{{ goal.progress_percent }}%</span>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="empty-state">No learning goals yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Study Groups -->
+        <div class="tab-panel" id="tab-groups">
+            <div class="groups-list">
+                {% for group in study_groups %}
+                <div class="group-card">
+                    <div class="group-card-header">
+                        <h3>{{ group.name }}</h3>
+                        <span class="group-members">{{ group.member_count }} members</span>
+                    </div>
+                    <p class="group-description">{{ group.description }}</p>
+                </div>
+                {% empty %}
+                <p class="empty-state">Not part of any study groups yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Achievements -->
+        <div class="tab-panel" id="tab-achievements">
+            <div class="achievements-grid">
+                {% for achievement in achievements %}
+                <div class="achievement-card">
+                    <img src="{{ achievement.icon.url }}" alt="{{ achievement.title }}" class="achievement-icon">
+                    <h4>{{ achievement.title }}</h4>
+                    <p class="achievement-date">{{ achievement.earned_at }}</p>
+                </div>
+                {% empty %}
+                <p class="empty-state">No achievements earned yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Activity -->
+        <div class="tab-panel" id="tab-activity">
+            <div class="activity-list">
+                {% for activity in recent_activity %}
+                <div class="activity-item">
+                    <span class="activity-dot"></span>
+                    <p>{{ activity.description }}</p>
+                    <span class="activity-time">{{ activity.created_at }}</span>
+                </div>
+                {% empty %}
+                <p class="empty-state">No recent activity.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const tabs = document.querySelectorAll('.tab');
+    const panels = document.querySelectorAll('.tab-panel');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function () {
+            const target = this.dataset.tab;
+
+            tabs.forEach(t => t.classList.remove('active'));
+            panels.forEach(p => p.classList.remove('active'));
+
+            this.classList.add('active');
+            document.getElementById('tab-' + target).classList.add('active');
+        });
+    });
+});
+</script>
+{% endblock %}
