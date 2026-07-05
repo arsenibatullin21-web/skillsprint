@@ -7,7 +7,7 @@ from django.http import HttpResponseRedirect
 from django.template.context_processors import request
 from django.utils import timezone
 
-from django.views.generic import ListView, CreateView
+from django.views.generic import ListView, CreateView, DetailView
 from django.urls import reverse_lazy
 
 from goals.forms import GoalCreateForm, MilestoneFormSet
@@ -128,4 +128,19 @@ class CreateGoalView(LoginRequiredMixin,CreateView):
                 milestone.save()
 
         return HttpResponseRedirect(self.get_success_url())
+
+
+class GoalDetailView(DetailView):
+    model = LearningGoals
+    template_name = 'goals/goal_detail.html'
+    context_object_name = 'goal'
+    pk_url_kwarg = 'id'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['milestone_next'] = self.object.milestones.filter(
+            is_completed=False,
+        ).order_by('position').first()
+        return context
+
 
