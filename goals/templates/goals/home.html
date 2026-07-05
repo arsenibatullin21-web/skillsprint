@@ -16,7 +16,7 @@
             <p class="dashboard-summary">Keep your learning moving with one meaningful step today.</p>
         </div>
         {% if goals %}
-        <a href="#" class="dashboard-primary-action">
+        <a href="{% url 'goals:create' %}" class="dashboard-primary-action">
             <span aria-hidden="true">+</span>
             New goal
         </a>
@@ -188,7 +188,7 @@
     </div>
     {% else %}
         <h3>You don't have any goals</h3>
-        <a href="#" class="dashboard-primary-action">
+        <a href="{% url 'goals:create' %}" class="dashboard-primary-action">
             <span aria-hidden="true">+</span>
             New goal
         </a>

@@ -1,10 +1,16 @@
 from datetime import timedelta
 
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
 from django.db.models import Avg, Count, Q
+from django.http import HttpResponseRedirect
+from django.template.context_processors import request
 from django.utils import timezone
 
-from django.views.generic import ListView
+from django.views.generic import ListView, CreateView
+from django.urls import reverse_lazy
 
+from goals.forms import GoalCreateForm, MilestoneFormSet
 from goals.models import LearningGoals, ProgressEntry
 
 
@@ -81,4 +87,45 @@ class MyGoalsView(ListView):
             )
         )
 
+class CreateGoalView(LoginRequiredMixin,CreateView):
+    model = LearningGoals
+    template_name = 'goals/goal_create.html'
+    success_url = reverse_lazy('goals:my_goals')
+    form_class = GoalCreateForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['milestone_formset'] = MilestoneFormSet(
+            self.request.POST or None,
+            prefix="milestones",
+            instance=self.object,
+        )
+        return context
+
+
+    def form_valid(self, form):
+        milestone_formset = MilestoneFormSet(
+            data=self.request.POST,
+            instance=self.object,
+            prefix="milestones",
+        )
+
+        if not milestone_formset.is_valid():
+            return self.form_invalid(form)
+
+        with transaction.atomic():
+            self.object = form.save(commit=False)
+            self.object.owner = self.request.user
+            self.object.save()
+
+            milestone_formset.instance = self.object
+            milestones = milestone_formset.save(commit=False)
+
+            for position, milestone in enumerate(milestones, start=1):
+                milestone.goal = self.object
+                milestone.position = position
+                milestone.save()
+
+        return HttpResponseRedirect(self.get_success_url())
 

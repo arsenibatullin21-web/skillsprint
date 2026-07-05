@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Create Goal - CommunityHub{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'goals/css/goal_form.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="goal-form-page">
+    <header class="goal-form-header">
+        <div>
+            <a href="{% url 'goals:my_goals' %}" class="back-link">
+                <span aria-hidden="true">&larr;</span>
+                Goals
+            </a>
+            <h1>Create a learning goal</h1>
+            <p>Set a clear outcome, deadline, and the steps needed to reach it.</p>
+        </div>
+
+        <div class="header-actions">
+            <a href="{% url 'goals:my_goals' %}" class="secondary-action">Cancel</a>
+            <button type="submit" form="goal-form" class="primary-action">
+                Create goal
+            </button>
+        </div>
+    </header>
+
+    <form id="goal-form" class="goal-form" method="post" action="">
+        {% csrf_token %}
+        {{ milestone_formset.management_form }}
+        {% if form.non_field_errors %}
+              <ul class="non-field-errors">
+                    <li>{{ form.non_field_errors }}</li>
+                </ul>
+        {% endif %}
+        <div class="goal-form-main">
+            <section class="form-section">
+                <div class="section-title">
+                    <span>01</span>
+                    <div>
+                        <h2>Goal details</h2>
+                        <p>Define the result you want to achieve.</p>
+                    </div>
+                </div>
+
+                <div class="field-group">
+                    <label for="id_title">Title</label>
+                    <input
+                        id="id_title"
+                        name="{{ form.title.name }}"
+                        type="text"
+                        value="{{ form.title.value|default_if_none:'' }}"
+                        maxlength="100"
+                        placeholder="Example: Build a complete Django application"
+                    >
+                    <div class="field-meta">
+                        <span>Keep the outcome specific and measurable.</span>
+                        <span>0 / 100</span>
+                    </div>
+                    {% if form.title.errors %}
+                        <span class="field-error">{{ form.title.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="field-group">
+                    <label for="id_description">Description</label>
+                    <textarea
+                        id="id_description"
+                        name="{{ form.description.name }}"
+                        rows="6"
+                        maxlength="500"
+
+                        placeholder="Describe what success looks like and why this goal matters."
+                    >{{ form.description.value|default_if_none:'' }}</textarea>
+                    <div class="field-meta">
+                        <span>Optional</span>
+                        <span>0 / 500</span>
+                    </div>
+                      {% if form.description.errors %}
+                        <span class="field-error">{{ form.description.errors.0 }}</span>
+                    {% endif %}
+                </div>
+            </section>
+
+            <section class="form-section">
+                <div class="section-title">
+                    <span>02</span>
+                    <div>
+                        <h2>Milestones</h2>
+                        <p>Break the goal into smaller deliverables.</p>
+                    </div>
+                </div>
+
+               <div id="milestone-list" class="milestone-list">
+                {{ milestone_formset.non_form_errors }}
+
+                {% for milestone_form in milestone_formset %}
+                    <div class="milestone-row">
+                        {% for hidden_field in milestone_form.hidden_fields %}
+                            {{ hidden_field }}
+                        {% endfor %}
+
+                        <span class="milestone-position">
+                            {{ forloop.counter }}
+                        </span>
+                        <div class="milestone-field">
+                            {{ milestone_form.title.label_tag }}
+                            {{ milestone_form.title }}
+                            {{ milestone_form.title.errors }}
+                        </div>
+
+                        <div class="milestone-date">
+                            {{ milestone_form.due_date.label_tag }}
+                            {{ milestone_form.due_date }}
+                            {{ milestone_form.due_date.errors }}
+                        </div>
+
+                        <span hidden>
+                            {{ milestone_form.DELETE }}
+                        </span>
+
+                        <button
+                            type="button"
+                            class="remove-milestone"
+                            aria-label="Remove milestone"
+                        >
+                            &times;
+                        </button>
+                    </div>
+                {% endfor %}
+            </div>
+{##}
+{#                <button type="button" class="add-milestone">#}
+{#                    <span aria-hidden="true">+</span>#}
+{#                    Add milestone#}
+{#                </button>#}
+            </section>
+        </div>
+
+        <aside class="goal-settings">
+            <section class="settings-section">
+                <h2>Goal settings</h2>
+
+                <div class="field-group">
+                    <label for="id_deadline">Deadline</label>
+                    <input id="id_deadline" name="{{ form.deadline.name }}" type="date"  value="{{ form.deadline.value|default_if_none:'' }}">
+                </div>
+                  {% if form.deadline.errors %}
+                        <span class="field-error">{{ form.deadline.errors.0 }}</span>
+                    {% endif %}
+
+                <div class="field-group">
+                    <label for="id_status">Status</label>
+                    <select id="id_status" name="{{ form.status.name }}">
+                        <option value="active" selected>Active</option>
+                        <option value="paused">Paused</option>
+                    </select>
+                      {% if form.status.errors %}
+                        <span class="field-error">{{ form.status.errors.0 }}</span>
+                    {% endif %}
+                </div>
+            </section>
+
+            <section class="settings-section">
+                <fieldset class="visibility-fieldset">
+                    <legend>Visibility</legend>
+
+                    <label class="visibility-option">
+                        <input type="radio" name="{{ form.visibility.name }}" value="public" checked>
+                        <span>
+                            <strong>Public</strong>
+                            <small>Visible on your profile and Explore.</small>
+                        </span>
+                    </label>
+
+                    <label class="visibility-option">
+                        <input type="radio" name="{{ form.visibility.name }}" value="private">
+                        <span>
+                            <strong>Private</strong>
+                            <small>Only you can view this goal.</small>
+                        </span>
+                    </label>
+                         {% if form.visibility.errors %}
+                            <span class="field-error">{{ form.visibility.errors.0 }}</span>
+                        {% endif %}
+                </fieldset>
+            </section>
+        </aside>
+
+        <div class="mobile-form-actions">
+            <a href="{% url 'goals:my_goals' %}" class="secondary-action">Cancel</a>
+            <button type="submit" class="primary-action">Create goal</button>
+        </div>
+    </form>
+</div>
+    <script>
+    const milestoneList = document.querySelector("#milestone-list");
+
+    milestoneList.addEventListener("click", (event) => {
+        const removeButton = event.target.closest(".remove-milestone");
+
+        if (!removeButton) {
+            return;
+        }
+
+        const row = removeButton.closest(".milestone-row");
+        const deleteInput = row.querySelector(
+            'input[name$="-DELETE"]'
+        );
+
+        deleteInput.checked = true;
+        row.hidden = true;
+
+        const visibleRows = milestoneList.querySelectorAll(
+            ".milestone-row:not([hidden])"
+        );
+
+        visibleRows.forEach((visibleRow, index) => {
+            visibleRow.querySelector(
+                ".milestone-position"
+            ).textContent = index + 1;
+        });
+    });
+</script>
+{% endblock %}

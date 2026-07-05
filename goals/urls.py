@@ -5,4 +5,5 @@ app_name = 'goals'
 
 urlpatterns = [
     path('', views.MyGoalsView.as_view(), name='my_goals'),
+    path('create/', views.CreateGoalView.as_view(), name='create')
 ]

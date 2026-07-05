@@ -51,7 +51,7 @@ class Milestone(models.Model):
 
 
     class Meta:
-        ordering = ['title']
+        ordering = ['position', 'id']
         db_table = 'milestone'
         verbose_name = 'Milestone'
         verbose_name_plural = 'Milestones'
