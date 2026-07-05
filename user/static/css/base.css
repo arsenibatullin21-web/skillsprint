@@ -655,3 +655,8 @@ a {
         grid-template-columns: repeat(2, 1fr);
     }
 }
+
+.week-row .day-today {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}

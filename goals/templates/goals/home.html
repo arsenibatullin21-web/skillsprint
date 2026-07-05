@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Dashboard - CommunityHub{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <section class="dashboard-heading">
+        <div>
+            <p class="dashboard-kicker">{% now "l, F j" %}</p>
+            <h1>Good morning, {{ user.username }}</h1>
+            <p class="dashboard-summary">Keep your learning moving with one meaningful step today.</p>
+        </div>
+        {% if goals %}
+        <a href="#" class="dashboard-primary-action">
+            <span aria-hidden="true">+</span>
+            New goal
+        </a>
+        {% endif %}
+    </section>
+
+    {% if goals %}
+    <section class="metrics" aria-label="Learning overview">
+        <div class="metric">
+            <span class="metric-value">{{ active_goals.count }}</span>
+            <span class="metric-label">Active goals</span>
+        </div>
+        <div class="metric">
+            <span class="metric-value metric-value-success">{{ completed_goals.count }}</span>
+            <span class="metric-label">Completed</span>
+        </div>
+        <div class="metric">
+            <span class="metric-value metric-value-warning">{{ upcoming_goals.count }}</span>
+            <span class="metric-label">Due this week</span>
+        </div>
+        <div class="metric">
+            <span class="metric-value">{{ avg_progress }}%</span>
+            <span class="metric-label">Average progress</span>
+        </div>
+    </section>
+
+    <div class="dashboard-layout">
+        <div class="dashboard-main">
+            <section class="dashboard-section">
+                <div class="section-heading">
+                    <div>
+                        <h2>Active goals</h2>
+                        <p>Your current learning priorities</p>
+                    </div>
+                    <a href="#" class="section-link">View all</a>
+                </div>
+
+                <div class="goal-list">
+                    {% for a_goal in active_goals %}
+                    <article class="dashboard-goal">
+                        <div class="goal-topline">
+                            <span class="goal-category category-development">Development</span>
+                            <span class="goal-deadline">{{ a_goal.deadline|date:"l, F j" }}</span>
+                        </div>
+                        <h3>{{ a_goal.title }}</h3>
+                        <p>{{ a_goal.description|truncatewords:10 }}</p>
+                        <div class="goal-progress-row">
+                            <div
+                                class="dashboard-progress"
+                                role="progressbar"
+                                aria-label="{{ a_goal.title }} progress"
+                                aria-valuenow="{{ a_goal.progress_percent }}"
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                            >
+                                <span style="width: {{ a_goal.progress_percent }}%"></span>
+                            </div>
+                            <strong>{{ a_goal.progress_percent }}%</strong>
+                        </div>
+                        <div class="goal-footer">
+                            {% if a_goal.milestones_total %}
+                                <span>
+                                    {{ a_goal.milestones_completed }}
+                                    of {{ a_goal.milestones_total }} milestones
+                                </span>
+                            {% else %}
+                                <span>No milestones yet</span>
+                            {% endif %}
+                            <a href="#">Continue</a>
+                        </div>
+                    </article>
+                    {% endfor %}
+
+                </div>
+            </section>
+
+            <section class="dashboard-section activity-section">
+                <div class="section-heading">
+                    <div>
+                        <h2>Recent activity</h2>
+                        <p>Your progress over the last few days</p>
+                    </div>
+                </div>
+
+                <div class="dashboard-activity-list">
+                    {% for foo in recent_activity %}
+                    <article class="dashboard-activity">
+                        <span class="activity-marker marker-success"></span>
+                        <div>
+                            <p>{{ foo.note }}</p>
+                            <span>{{ foo.created_at }}</span>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
+
+        <aside class="dashboard-sidebar">
+            <section class="sidebar-section">
+                <div class="section-heading compact-heading">
+                    <div>
+                        <h2>Upcoming</h2>
+                        <p>Deadlines to watch</p>
+                    </div>
+                </div>
+
+                <div class="deadline-list">
+                    {% for upcoming_goal in upcoming_goals %}
+                    <article class="deadline-item">
+                         <time datetime="{{ upcoming_goal.deadline|date:'Y-m-d' }}">
+                            <strong>{{ upcoming_goal.deadline|date:"d" }}</strong>
+                            <span>{{ upcoming_goal.deadline|date:"M"|upper }}</span>
+                        </time>
+                        <div>
+                            <h3>{{ upcoming_goal.title }}</h3>
+                            <p>{{ upcoming_goal.remaining_days }} days remaining</p>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="sidebar-section">
+                <div class="section-heading compact-heading">
+                    <div>
+                        <h2>Study groups</h2>
+                        <p>Continue learning together</p>
+                    </div>
+                    <a href="#" class="section-link">Explore</a>
+                </div>
+
+                <div class="dashboard-group-list">
+                    <a href="#" class="dashboard-group">
+                        <span class="group-initials group-initials-green">BB</span>
+                        <span>
+                            <strong>Backend Builders</strong>
+                            <small>24 members</small>
+                        </span>
+                    </a>
+                    <a href="#" class="dashboard-group">
+                        <span class="group-initials group-initials-red">SL</span>
+                        <span>
+                            <strong>Spanish Learners</strong>
+                            <small>41 members</small>
+                        </span>
+                    </a>
+                    <a href="#" class="dashboard-group">
+                        <span class="group-initials group-initials-blue">UX</span>
+                        <span>
+                            <strong>Interface Practice</strong>
+                            <small>18 members</small>
+                        </span>
+                    </a>
+                </div>
+            </section>
+
+            <section class="focus-panel">
+                <p class="focus-label">Weekly focus</p>
+                <h2>{{ learning_days }} learning day{{ learning_days|pluralize }}</h2>
+                <p>Each completed day means you updated at least one goal.</p>
+                <div class="week-row" aria-label="{{ learning_days }} learning days completed">
+                    {% for day in week_days %}
+                        <span class="{% if day.completed %}day-complete{% endif %} {% if is_today %}day-today{% endif %}" title="{{ day.date|date:'l, F j' }}">{{ day.label }}</span>
+                    {% endfor %}
+                </div>
+            </section>
+        </aside>
+    </div>
+    {% else %}
+        <h3>You don't have any goals</h3>
+        <a href="#" class="dashboard-primary-action">
+            <span aria-hidden="true">+</span>
+            New goal
+        </a>
+    {% endif %}
+</div>
+{% endblock %}
