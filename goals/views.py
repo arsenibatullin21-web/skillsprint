@@ -1,16 +1,18 @@
 from datetime import timedelta
+from gc import get_objects
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
 from django.db.models import Avg, Count, Q
 from django.http import HttpResponseRedirect
+from django.shortcuts import get_object_or_404
 from django.template.context_processors import request
 from django.utils import timezone
 
 from django.views.generic import ListView, CreateView, DetailView, UpdateView, DeleteView
 from django.urls import reverse_lazy, reverse
 
-from goals.forms import GoalCreateForm, MilestoneFormSet, MilestoneUpdateForm
+from goals.forms import GoalCreateForm, MilestoneFormSet, MilestoneUpdateForm, ProgressCreateForm
 from goals.models import LearningGoals, ProgressEntry
 
 
@@ -212,4 +214,37 @@ class GoalDeleteView(LoginRequiredMixin, DeleteView):
     def get_queryset(self):
         return LearningGoals.objects.filter(owner=self.request.user)
 
+class GoalProgressCreateView(LoginRequiredMixin, CreateView):
+    template_name = 'goals/progress_update.html'
+    context_object_name = 'progress'
+    model = ProgressEntry
+    pk_url_kwarg = 'id'
+    form_class = ProgressCreateForm
+
+
+    def get_context_data(self, **kwargs):
+        goal = get_object_or_404(
+            LearningGoals.objects.annotate(total_milestones=Count('milestones', distinct=True), completed_milestones=Count('milestones', filter=Q(milestones__is_completed=True), distinct=True)),
+            pk=self.kwargs['id'],
+            owner=self.request.user
+        )
+        self.goal = goal
+        context = super().get_context_data(**kwargs)
+        context['previous_progress'] = ProgressEntry.objects.filter(goal=goal).order_by('-created_at').first()
+        context['goal'] = goal
+        return context
+
+    def get_success_url(self):
+        return reverse('goals:detail', kwargs={"id": self.goal.id})
+
+    @transaction.atomic()
+    def form_valid(self, form):
+        goal = get_object_or_404(LearningGoals, pk=self.kwargs['id'], owner=self.request.user)
+
+        form.instance.goal = goal
+
+        goal.progress_percent = form.cleaned_data['progress_percent']
+        goal.save(update_fields=['progress_percent'])
+        self.goal = goal
+        return super().form_valid(form)
 

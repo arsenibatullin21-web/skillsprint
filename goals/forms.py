@@ -1,7 +1,7 @@
 from django import forms
 from django.forms.models import inlineformset_factory
 
-from goals.models import LearningGoals, Milestone
+from goals.models import LearningGoals, Milestone, ProgressEntry
 
 
 class GoalCreateForm(forms.ModelForm):
@@ -44,3 +44,9 @@ MilestoneUpdateForm = inlineformset_factory(
         'title': forms.TextInput(attrs={'placeholder': 'Add the next meaningful step'})
     }
 )
+
+class ProgressCreateForm(forms.ModelForm):
+
+    class Meta:
+        model = ProgressEntry
+        fields = ['progress_percent', 'note']

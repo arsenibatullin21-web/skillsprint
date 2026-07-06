@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Update progress - CommunityHub{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'goals/css/progress_update.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="progress-update-page">
+    <header class="progress-update-header">
+        <div>
+            <a href="{% url 'goals:detail' goal.id %}" class="progress-back-link">
+                <span aria-hidden="true">&larr;</span>
+                Goal details
+            </a>
+            <p class="page-eyebrow">Progress entry</p>
+            <h1>Update your progress</h1>
+            <p>Record where you are now and what moved the goal forward.</p>
+        </div>
+
+        <div class="desktop-actions">
+            <a href="{% url 'goals:detail' goal.id %}" class="secondary-action">Cancel</a>
+            <button type="submit" form="progress-update-form" class="primary-action">
+                Save update
+            </button>
+        </div>
+    </header>
+
+    <form id="progress-update-form" class="progress-update-layout" method="post">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+        	 <ul class="non-field-errors">
+                <li>{{ form.non_field_errors }}</li>
+            </ul>
+        {% endif %}
+
+        <main class="progress-update-main">
+            <section class="progress-form-section" aria-labelledby="progress-heading">
+                <div class="section-heading">
+                    <span>01</span>
+                    <div>
+                        <h2 id="progress-heading">Set current progress</h2>
+                        <p>Choose the percentage that best reflects the completed work.</p>
+                    </div>
+                </div>
+
+                <div class="progress-comparison" aria-live="polite">
+                    <div>
+                        <span>Previous</span>
+                        <strong>
+                            {% if previous_progress %}
+                                {{ previous_progress.progress_percent }}%
+                            {% else %}
+                                {{ goal.progress_percent|default:0 }}%
+                            {% endif %}
+                        </strong>
+                    </div>
+                    <span class="comparison-arrow" aria-hidden="true">&rarr;</span>
+                    <div>
+                        <span>New progress</span>
+                        <strong>
+                            <output id="progress-value">
+                                {% if previous_progress %}
+                                    {{ previous_progress.progress_percent }}%
+                                {% else %}
+                                    {{ goal.progress_percent|default:0 }}%
+                                {% endif %}
+                            </output>
+                        </strong>
+                    </div>
+                    <span id="progress-change" class="progress-change is-neutral">0%</span>
+                </div>
+
+                <div class="progress-slider-field">
+                    <label for="progress-range">Completion percentage</label>
+                    <input
+                        id="progress-range"
+                        name="{{ form.progress_percent.html_name }}"
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value="{% if previous_progress %}{{ previous_progress.progress_percent }}{% else %}{{ goal.progress_percent|default:0 }}{% endif %}"
+                        data-previous-progress="{% if previous_progress %}{{ previous_progress.progress_percent }}{% else %}{{ goal.progress_percent|default:0 }}{% endif %}"
+                    >
+                    <div class="progress-scale" aria-hidden="true">
+                        <span>0%</span>
+                        <span>25%</span>
+                        <span>50%</span>
+                        <span>75%</span>
+                        <span>100%</span>
+                    </div>
+                    {% if form.progress_percent.errors %}
+                        <span class="field-error">{{ form.progress_percent.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="progress-presets" aria-label="Progress presets">
+                    <button type="button" data-progress-preset="25">25%</button>
+                    <button type="button" data-progress-preset="50">50%</button>
+                    <button type="button" data-progress-preset="75">75%</button>
+                    <button type="button" data-progress-preset="100">100%</button>
+                </div>
+            </section>
+
+            <section class="progress-form-section" aria-labelledby="note-heading">
+                <div class="section-heading">
+                    <span>02</span>
+                    <div>
+                        <h2 id="note-heading">Add a progress note</h2>
+                        <p>Capture the result, decision, or lesson behind this update.</p>
+                    </div>
+                </div>
+
+                <div class="progress-note-field">
+                    <label for="progress-note">What changed?</label>
+                    <textarea
+                        id="progress-note"
+                        name="{{ form.note.html_name }}"
+                        rows="7"
+                        maxlength="500"
+                        placeholder="Example: Finished authentication, added profile editing, and covered the main flow with tests."
+                    >{{ form.note.value|default_if_none:'' }}</textarea>
+                    <div class="field-meta">
+                        <span>Focus on concrete progress rather than time spent.</span>
+                        <span><output id="note-character-count">0</output> / 500</span>
+                    </div>
+                    {% if form.note.errors %}
+                        <span class="field-error">{{ form.note.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="note-prompts">
+                    <p>Useful details</p>
+                    <ul>
+                        <li>What did you complete?</li>
+                        <li>What did you learn?</li>
+                        <li>What is the next step?</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+
+        <aside class="progress-update-sidebar">
+            <section class="goal-context">
+                <p class="context-label">Updating goal</p>
+                <h2>Build a complete Django application</h2>
+                <p class="goal-context-description">
+                    Build a production-ready learning platform while practising
+                    Django and Django REST Framework.
+                </p>
+
+                <dl>
+                    <div>
+                        <dt>Status</dt>
+                        <dd><span class="status-indicator"></span>{{ goal.status|capfirst }}</dd>
+                    </div>
+                    <div>
+                        <dt>Deadline</dt>
+                        <dd>{{ goal.deadline|date:'F j, Y' }}</dd>
+                    </div>
+                    <div>
+                        <dt>Milestones</dt>
+                        <dd>{{ goal.completed_milestones }} of {{ goal.total_milestones }} complete</dd>
+                    </div>
+                </dl>
+            </section>
+
+            <section class="last-entry">
+                <p class="context-label">Last update</p>
+                {% if previous_progress %}
+                    <div class="last-entry-heading">
+                        <strong>{{ previous_progress.progress_percent }}%</strong>
+                        <time datetime="{{ previous_progress.created_at|date:'Y-m-d' }}">
+                            {{ previous_progress.created_at|date:'F j' }}
+                        </time>
+                    </div>
+                    <p>{{ previous_progress.note }}</p>
+                {% else %}
+                    <p>No progress updates yet.</p>
+                {% endif %}
+            </section>
+        </aside>
+
+        <div class="mobile-actions">
+            <a href="{% url 'goals:detail' goal.id %}" class="secondary-action">Cancel</a>
+            <button type="submit" class="primary-action">Save update</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'goals/js/progress_update.js' %}"></script>
+{% endblock %}
