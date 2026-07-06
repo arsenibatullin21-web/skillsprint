@@ -37,7 +37,7 @@
         </div>
 
         <div class="goal-header-actions">
-            <button type="button" class="secondary-action">Edit goal</button>
+            <a href="{% url 'goals:edit' goal.id %}?next={{ request.path }}" class="secondary-action">Edit goal</a>
             <button type="button" class="primary-action">Update progress</button>
         </div>
     </header>

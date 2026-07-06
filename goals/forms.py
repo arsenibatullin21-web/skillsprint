@@ -26,3 +26,20 @@ MilestoneFormSet = inlineformset_factory(
         ),
     },
 )
+
+
+class GoalUpdateForm(forms.ModelForm):
+    class Meta:
+        model = LearningGoals
+        fields = ['title', 'description']
+
+MilestoneUpdateForm = inlineformset_factory(
+    model = Milestone,
+    parent_model=LearningGoals,
+    fields=['title', 'due_date', 'is_completed'],
+    extra=1,
+    can_delete=True,
+    widgets={
+        'due_date': forms.DateInput(attrs={'type': 'date'})
+    }
+)

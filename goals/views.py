@@ -7,10 +7,10 @@ from django.http import HttpResponseRedirect
 from django.template.context_processors import request
 from django.utils import timezone
 
-from django.views.generic import ListView, CreateView, DetailView
-from django.urls import reverse_lazy
+from django.views.generic import ListView, CreateView, DetailView, UpdateView
+from django.urls import reverse_lazy, reverse
 
-from goals.forms import GoalCreateForm, MilestoneFormSet
+from goals.forms import GoalCreateForm, MilestoneFormSet, MilestoneUpdateForm
 from goals.models import LearningGoals, ProgressEntry
 
 
@@ -142,5 +142,65 @@ class GoalDetailView(DetailView):
             is_completed=False,
         ).order_by('position').first()
         return context
+
+class GoalUpdateView(LoginRequiredMixin, UpdateView):
+    model = LearningGoals
+    template_name = 'goals/goal_update.html'
+    context_object_name = 'goal'
+    pk_url_kwarg = 'id'
+    form_class = GoalCreateForm
+
+
+
+    def form_valid(self, form):
+        context = self.get_context_data(form=form)
+        formset = context['milestone_formset']
+
+        if not formset.is_valid():
+            return self.form_invalid(form)
+
+
+        with transaction.atomic():
+            self.object = form.save()
+
+            formset.instance = self.object
+            formset.save()
+
+            position = 1
+
+            for milestone_form in formset.forms:
+                cleaned_data = milestone_form.cleaned_data
+                if not cleaned_data:
+                    continue
+                if cleaned_data.get("DELETE"):
+                    continue
+
+                milestone = milestone_form.instance
+
+                if milestone.pk:
+                    milestone.position = position
+                    milestone.save(update_fields=['position'])
+                    position += 1
+
+            return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse('goals:detail', kwargs={'id': self.object.pk})
+
+
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['milestone_formset'] = MilestoneUpdateForm(
+            self.request.POST or None,
+            prefix='milestone',
+            instance=self.object
+        )
+        return context
+
+    def get_queryset(self):
+        return LearningGoals.objects.filter(
+            owner=self.request.user
+        )
 
 
