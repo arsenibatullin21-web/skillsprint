@@ -660,3 +660,84 @@ a {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
 }
+
+.delete-dialog {
+    background: #fff;
+    color: var(--color-text);
+    box-shadow: 0 20px 50px rgb(31 41 55 / 20%);
+    position: fixed;
+    inset: 0;
+    margin: auto;
+
+    width: min(440px, calc(100% - 32px));
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+}
+
+.delete-dialog::backdrop {
+    background: rgb(17 24 39 / 55%);
+}
+
+.delete-dialog-content {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr);
+    gap: 14px;
+    padding: 24px;
+}
+
+.delete-dialog-icon {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    border-radius: 50%;
+    background: #fff0ee;
+    color: #a3342c;
+    font-weight: 750;
+}
+
+.delete-dialog h2 {
+    font-size: 1.1rem;
+}
+
+.delete-dialog p {
+    margin-top: 7px;
+    color: var(--color-text-muted);
+    font-size: 0.82rem;
+    line-height: 1.55;
+}
+
+.delete-dialog-actions {
+    display: flex;
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+    gap: 9px;
+    margin-top: 10px;
+}
+
+.dialog-cancel,
+.dialog-delete {
+    min-height: 38px;
+    padding: 8px 13px;
+    border-radius: 6px;
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 650;
+    cursor: pointer;
+}
+
+.dialog-cancel {
+    border: 1px solid var(--color-border);
+    background: #fff;
+}
+
+.dialog-delete {
+    border: 1px solid #a3342c;
+    background: #a3342c;
+    color: #fff;
+}
+
+.dialog-delete:hover {
+    background: #872820;
+}

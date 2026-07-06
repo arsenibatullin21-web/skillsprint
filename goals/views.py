@@ -7,7 +7,7 @@ from django.http import HttpResponseRedirect
 from django.template.context_processors import request
 from django.utils import timezone
 
-from django.views.generic import ListView, CreateView, DetailView, UpdateView
+from django.views.generic import ListView, CreateView, DetailView, UpdateView, DeleteView
 from django.urls import reverse_lazy, reverse
 
 from goals.forms import GoalCreateForm, MilestoneFormSet, MilestoneUpdateForm
@@ -202,5 +202,14 @@ class GoalUpdateView(LoginRequiredMixin, UpdateView):
         return LearningGoals.objects.filter(
             owner=self.request.user
         )
+
+
+class GoalDeleteView(LoginRequiredMixin, DeleteView):
+    model = LearningGoals
+    success_url = reverse_lazy('goals:my_goals')
+    pk_url_kwarg = 'id'
+
+    def get_queryset(self):
+        return LearningGoals.objects.filter(owner=self.request.user)
 
 

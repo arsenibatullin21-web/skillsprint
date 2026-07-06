@@ -220,11 +220,9 @@
             </section>
 
             <section class="settings-section danger-settings">
-                <form action="">
                     <h2>Danger zone</h2>
                     <p>Deleting a goal also removes its milestones and progress history.</p>
-                    <button type="button" class="delete-goal-action">Delete goal</button>
-                </form>
+                    <button type="button" id="open-delete-dialog" class="delete-goal-action">Delete goal</button>
             </section>
         </aside>
 
@@ -233,6 +231,46 @@
             <button type="submit" class="primary-action">Save changes</button>
         </div>
     </form>
+
+<dialog
+    id="delete-goal-dialog"
+    class="delete-dialog"
+    aria-labelledby="delete-dialog-title"
+>
+    <div class="delete-dialog-content">
+        <div class="delete-dialog-icon" aria-hidden="true">!</div>
+
+        <div>
+            <h2 id="delete-dialog-title">Delete this goal?</h2>
+            <p>
+                This will permanently delete the goal, its milestones,
+                and progress history. This action cannot be undone.
+            </p>
+        </div>
+
+        <div class="delete-dialog-actions">
+            <button
+                type="button"
+                id="close-delete-dialog"
+                class="dialog-cancel"
+            >
+                Cancel
+            </button>
+
+            <form
+                method="post"
+                action="{% url 'goals:delete' goal.id %}"
+            >
+                {% csrf_token %}
+
+                <button type="submit" class="dialog-delete">
+                    Delete permanently
+                </button>
+            </form>
+        </div>
+    </div>
+</dialog>
+
 </div>
 
 <template id="update-milestone-template">

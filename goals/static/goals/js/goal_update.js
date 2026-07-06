@@ -73,3 +73,30 @@ milestoneList.addEventListener("change", (event) => {
         .closest(".milestone-row")
         .classList.toggle("is-completed", event.target.checked);
 });
+
+
+const deleteDialog = document.querySelector(
+    "#delete-goal-dialog"
+);
+
+const openDeleteDialog = document.querySelector(
+    "#open-delete-dialog"
+);
+
+const closeDeleteDialog = document.querySelector(
+    "#close-delete-dialog"
+);
+
+openDeleteDialog.addEventListener("click", () => {
+    deleteDialog.showModal();
+});
+
+closeDeleteDialog.addEventListener("click", () => {
+    deleteDialog.close();
+});
+
+deleteDialog.addEventListener("click", (event) => {
+    if (event.target === deleteDialog) {
+        deleteDialog.close();
+    }
+});

@@ -40,6 +40,7 @@ MilestoneUpdateForm = inlineformset_factory(
     extra=1,
     can_delete=True,
     widgets={
-        'due_date': forms.DateInput(attrs={'type': 'date'})
+        'due_date': forms.DateInput(attrs={'type': 'date'}),
+        'title': forms.TextInput(attrs={'placeholder': 'Add the next meaningful step'})
     }
 )
