@@ -11,6 +11,6 @@ urlpatterns = [
     path('goals/<int:id>/delete/', views.GoalDeleteView.as_view(), name='delete'),
     path('goals/<int:id>/create/progress/', views.GoalProgressCreateView.as_view(), name='progress_update'),
     path('goals/explore/', views.GoalExploreView.as_view(), name='explore'),
-    # path('goals/my/'),
+    path('goals/my/', views.MyAllGoalsView.as_view(), name='my_all_goals'),
     # path('goals/<int:id>')
 ]

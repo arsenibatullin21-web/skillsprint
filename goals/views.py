@@ -242,8 +242,10 @@ class GoalProgressCreateView(LoginRequiredMixin, CreateView):
         goal = get_object_or_404(LearningGoals, pk=self.kwargs['id'], owner=self.request.user)
 
         form.instance.goal = goal
-
-        goal.progress_percent = form.cleaned_data['progress_percent']
+        progress_percent = form.cleaned_data['progress_percent']
+        goal.progress_percent = progress_percent
+        if progress_percent == 100:
+            goal.status = LearningGoals.Status.COMPLETED
         goal.save(update_fields=['progress_percent'])
         self.goal = goal
         return super().form_valid(form)
@@ -308,3 +310,19 @@ class GoalExploreView(ListView):
         if self.request.headers.get('HX-Request') == 'true':
             return ['goals/explore_goal_partial.html']
         return ['goals/explore_goals.html']
+
+class MyAllGoalsView(ListView):
+    template_name = 'goals/all_goals.html'
+    model = LearningGoals
+    context_object_name = 'goals'
+
+    def get_queryset(self):
+        queryset = LearningGoals.objects.filter(owner=self.request.user).annotate(
+            total_milestones=Count('milestones', distinct=True),
+            completed_milestones=Count('milestones', filter=Q(milestones__is_completed=True))
+        )
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        return context

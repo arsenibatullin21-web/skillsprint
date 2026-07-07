@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}All goals - CommunityHub{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'goals/css/all_goals.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="all-goals-page">
+    <header class="all-goals-header">
+        <div>
+            <p class="all-goals-kicker">Learning goals</p>
+            <h1>All goals</h1>
+            <p>Review every goal by status and decide what needs attention next.</p>
+        </div>
+        <a href="{% url 'goals:create' %}" class="new-goal-link">
+            <span aria-hidden="true">+</span>
+            New goal
+        </a>
+    </header>
+
+    <section class="goal-summary-grid" aria-label="Goal summary">
+        <article class="summary-item">
+            <span class="summary-value" data-summary-count="all">0</span>
+            <span class="summary-label">All goals</span>
+        </article>
+        <article class="summary-item">
+            <span class="summary-value summary-active" data-summary-count="active">0</span>
+            <span class="summary-label">Active</span>
+        </article>
+        <article class="summary-item">
+            <span class="summary-value summary-paused" data-summary-count="paused">0</span>
+            <span class="summary-label">Paused</span>
+        </article>
+        <article class="summary-item">
+            <span class="summary-value summary-completed" data-summary-count="completed">0</span>
+            <span class="summary-label">Completed</span>
+        </article>
+    </section>
+
+
+    <section class="goals-panel" aria-labelledby="goals-list-heading">
+        <div class="goals-panel-header">
+            <div>
+                <h2 id="goals-list-heading">Goal list</h2>
+                <p><span id="visible-goal-count">0</span> goals shown</p>
+            </div>
+
+            <div class="goal-status-tabs" role="tablist" aria-label="Filter goals by status">
+                <button type="button" class="status-tab is-active" data-filter="all">All</button>
+                <button type="button" class="status-tab" data-filter="active">Active</button>
+                <button type="button" class="status-tab" data-filter="paused">Paused</button>
+                <button type="button" class="status-tab" data-filter="completed">Completed</button>
+            </div>
+        </div>
+
+        <div class="goals-list" id="all-goals-list">
+            {% for goal in goals %}
+            <article class="goal-row" data-status="{{ goal.status }}">
+                <div class="goal-main">
+                    <div class="goal-topline">
+                        <span class="status-badge status-{{ goal.status }}">{{ goal.status|capfirst }}</span>
+                        <time datetime="2026-07-18">
+                            {% if goal.progress_percent != 100 %}
+                                Due {{ goal.deadline|date:'F j' }}
+                            {% else %}
+                                Finished {{ goal.deadline|date:'F j' }}
+                            {% endif %}
+                        </time>
+                    </div>
+                    <h3>{{ goal.title }}</h3>
+                    <p>{{ goal.description }}</p>
+                    <div class="goal-meta">
+                        <span>
+                            {% if goal.total_milestones > 0 %}
+                                {{ goal.completed_milestones }} of {{ goal.total_milestones }} milestones
+                            {% else %}
+                                No milestones yet
+                            {% endif %}
+                        </span>
+                        <span>Updated: {{ goal.updated_at|timesince }}</span>
+                    </div>
+                </div>
+
+                <div class="goal-progress">
+                    <div class="progress-label">
+                        <span>Progress</span>
+                        <strong>{{ goal.progress_percent }}%</strong>
+                    </div>
+                    <div class="progress-track" role="progressbar" aria-valuenow="{{ goal.progress_percent }}" aria-valuemin="0" aria-valuemax="100">
+                        <span style="width: {{ goal.progress_percent }}%"></span>
+                    </div>
+                    <div class="goal-actions">
+                        <a href="{% url 'goals:detail' goal.id %}">View</a>
+                        <a href="{% url 'goals:edit' goal.id %}">Edit</a>
+                    </div>
+                </div>
+            </article>
+            {% endfor %}
+
+        </div>
+
+        <section class="empty-goals-state" id="empty-goals-state" hidden>
+            <strong>No goals in this status</strong>
+            <p>Choose another status or create a new goal to keep your learning plan moving.</p>
+        </section>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'goals/js/all_goals.js' %}"></script>
+{% endblock %}
