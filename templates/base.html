@@ -16,8 +16,8 @@
             <a href="" class="logo">CommunityHub</a>
 
             <nav class="main-nav">
-                <a href="{% url 'goals:my_goals' %}">Home</a>
-                <a href="#">Goals</a>
+                <a href="{% url 'goals:my_goals' %}">Dashboard</a>
+                <a href="{% url 'goals:explore' %}">Explore</a>
                 <a href="#">Study Groups</a>
                 <a href="#">Challenges</a>
                 <a href="#">Achievements</a>
@@ -65,6 +65,7 @@
     </footer>
 
     <script src="{% static 'js/base.js' %}"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

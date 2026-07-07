@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Explore goals - CommunityHub{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'goals/css/explore_goals.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="explore-page">
+    <header class="explore-header">
+        <div>
+            <p class="explore-eyebrow">Community goals</p>
+            <h1>Explore public goals</h1>
+            <p>See what other learners are working toward and how their progress is moving.</p>
+        </div>
+        <a href="#" class="my-goals-link">My goals</a>
+    </header>
+
+    <form
+            action="{% url 'goals:explore' %}"
+            method="GET"
+            hx-get="{% url 'goals:explore' %}"
+            hx-target="#goals-shell"
+            hx-trigger="change, keyup delay:400ms from:#goal-search"
+            hx-push-url="true"
+
+
+    >
+    <section class="explore-toolbar" aria-label="Goal filters">
+        <div class="search-field">
+            <label for="goal-search">Search goals</label>
+            <div>
+                <span aria-hidden="true">&#128269;</span>
+                <input
+                    id="goal-search"
+                    type="search"
+                    name="goal-search"
+                    placeholder="Search by goal or learner"
+                    autocomplete="off"
+                    value="{{ query|default_if_none:'' }}"
+                >
+            </div>
+        </div>
+
+        <div class="filter-field">
+            <label for="status-filter">Status</label>
+            <select id="status-filter" name="status">
+                <option value="all" {% if selected_status == 'all' %}selected{% endif %}>All statuses</option>
+                <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
+                <option value="paused" {% if selected_status == 'paused' %}selected{% endif %}>Paused</option>
+                <option value="completed" {% if selected_status == 'completed' %}selected{% endif %}>Completed</option>
+            </select>
+        </div>
+
+        <div class="filter-field">
+            <label for="progress-filter">Progress</label>
+            <select id="progress-filter" name="progress">
+                <option value="all" {% if selected_progress == 'all' %}selected{% endif %}>Any progress</option>
+                <option value="starting" {% if selected_progress == 'starting' %}selected{% endif %}>Starting, 0-25%</option>
+                <option value="underway" {% if selected_progress == 'underway' %}selected{% endif %}>Underway, 26-74%</option>
+                <option value="near" {% if selected_progress == 'near' %}selected{% endif %}>Nearly there, 75-99%</option>
+                <option value="complete" {% if selected_progress == 'complete' %}selected{% endif %}>Complete, 100%</option>
+            </select>
+        </div>
+
+        <div class="filter-field">
+            <label for="sort-goals">Sort by</label>
+            <select id="sort-goals" name="sort">
+                <option value="recommended" {% if selected_sort == 'recommended' %}selected{% endif %}>Recommended</option>
+                <option value="newest" {% if selected_sort == 'newest' %}selected{% endif %}>Newest</option>
+                <option value="deadline" {% if selected_sort == 'deadline' %}selected{% endif %}>Deadline</option>
+                <option value="progress" {% if selected_sort == 'progress' %}selected{% endif %}>Most progress</option>
+            </select>
+        </div>
+    </section>
+
+    <div id="goals-shell">
+
+        {% include 'goals/explore_goal_partial.html' %}
+    </div>
+      </form>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+{#    <script src="{% static 'goals/js/explore_goals.js' %}"></script>#}
+{% endblock %}

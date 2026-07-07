@@ -248,3 +248,63 @@ class GoalProgressCreateView(LoginRequiredMixin, CreateView):
         self.goal = goal
         return super().form_valid(form)
 
+
+class GoalExploreView(ListView):
+    template_name = 'goals/explore_goals.html'
+    context_object_name = 'goals'
+    model = LearningGoals
+
+    def get_queryset(self):
+        queryset = LearningGoals.objects.filter(visibility=LearningGoals.Visibility.PUBLIC).annotate(
+            total_milestones=Count('milestones', distinct=True), completed_milestones=Count('milestones', filter=Q(milestones__is_completed=True), distinct=True)
+        )
+
+        search = self.request.GET.get('goal-search', None)
+        status = self.request.GET.get('status', None)
+        progress = self.request.GET.get('progress', None)
+        sort = self.request.GET.get('sort', None)
+
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search) |
+                Q(owner__first_name__icontains=search) |
+                Q(owner__last_name__icontains=search) |
+                Q(description__icontains=search)
+            )
+
+        if status and status != 'all':
+            queryset = queryset.filter(status=status)
+
+        if progress and progress != 'all':
+            if progress == 'starting':
+                queryset = queryset.filter(Q(progress_percent__gte=0) & Q(progress_percent__lte=25))
+            elif progress == 'underway':
+                queryset = queryset.filter(Q(progress_percent__gte=26) & Q(progress_percent__lte=74))
+            elif progress == 'near':
+                queryset = queryset.filter(Q(progress_percent__gte=75) & Q(progress_percent__lte=99))
+            elif progress == 'complete':
+                queryset = queryset.filter(progress_percent=100)
+
+        if sort:
+            if sort == 'newest':
+                queryset = queryset.order_by('-created_at')
+            elif sort == 'deadline':
+                queryset = queryset.order_by('deadline')
+            elif sort == 'progress':
+                queryset = queryset.order_by('-progress_percent')
+
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['query'] = self.request.GET.get('goal-search', None)
+        context['selected_status'] = self.request.GET.get('status', None)
+        context['selected_progress'] = self.request.GET.get('progress', None)
+        context['selected_sort'] = self.request.GET.get('sort', None)
+        return context
+
+    def get_template_names(self):
+        if self.request.headers.get('HX-Request') == 'true':
+            return ['goals/explore_goal_partial.html']
+        return ['goals/explore_goals.html']
