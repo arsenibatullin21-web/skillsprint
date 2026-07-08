@@ -256,6 +256,12 @@
     gap: 12px;
 }
 
+.goal-badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
 .goal-topline time {
     color: var(--color-text-muted);
     font-size: 0.65rem;
@@ -286,6 +292,20 @@
 .status-completed {
     background: #e8f2ff;
     color: #245d99;
+}
+
+.owner-goal-badge {
+    display: inline-flex;
+    min-height: 23px;
+    align-items: center;
+    padding: 3px 8px;
+    border: 1px solid rgb(79 70 229 / 22%);
+    border-radius: 5px;
+    background: rgb(79 70 229 / 8%);
+    color: var(--color-primary);
+    font-size: 0.64rem;
+    font-weight: 750;
+    text-transform: uppercase;
 }
 
 .goal-content h2 {
@@ -349,9 +369,18 @@
     background: #4f8f6a;
 }
 
-.view-goal-action {
-    min-height: 34px;
+.goal-card-actions {
+    display: grid;
+    gap: 7px;
     margin-top: 9px;
+}
+
+.view-goal-action,
+.edit-goal-action {
+    display: inline-flex;
+    min-height: 34px;
+    align-items: center;
+    justify-content: center;
     border: 1px solid var(--color-border);
     border-radius: 6px;
     background: var(--color-bg);
@@ -362,8 +391,15 @@
     cursor: pointer;
 }
 
-.view-goal-action:hover {
+.view-goal-action:hover,
+.edit-goal-action:hover {
     border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.edit-goal-action {
+    border-color: rgb(79 70 229 / 32%);
+    background: rgb(79 70 229 / 7%);
     color: var(--color-primary);
 }
 
@@ -407,7 +443,7 @@
 
     .goal-progress-column {
         grid-column: 2;
-        grid-template-columns: minmax(120px, 1fr) 120px;
+        grid-template-columns: minmax(120px, 1fr) minmax(110px, 130px);
         align-items: center;
     }
 
@@ -415,7 +451,7 @@
         grid-column: 1 / -1;
     }
 
-    .view-goal-action {
+    .goal-card-actions {
         margin-top: 0;
     }
 }
@@ -453,6 +489,7 @@
 
     .goal-progress-column {
         grid-column: 1;
+        grid-template-columns: 1fr;
     }
 }
 
@@ -469,7 +506,7 @@
         grid-template-columns: 1fr;
     }
 
-    .view-goal-action {
+    .goal-card-actions {
         margin-top: 4px;
     }
 }

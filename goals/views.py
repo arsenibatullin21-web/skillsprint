@@ -181,6 +181,7 @@ class GoalUpdateView(LoginRequiredMixin, UpdateView):
 
                 if milestone.pk:
                     milestone.position = position
+                    milestone.is_completed = cleaned_data.get('is_completed')
                     milestone.save(update_fields=['position'])
                     position += 1
 
@@ -326,3 +327,53 @@ class MyAllGoalsView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         return context
+
+class PublicGoalView(DetailView):
+    model = LearningGoals
+    template_name = 'goals/public_goal_detail.html'
+    context_object_name = 'goal'
+    pk_url_kwarg = 'id'
+
+    def get_queryset(self):
+        return LearningGoals.objects.filter(
+            visibility=LearningGoals.Visibility.PUBLIC,
+        ).annotate(
+            total_milestones=Count('milestones', distinct=True),
+            completed_milestones=Count(
+                'milestones',
+                filter=Q(milestones__is_completed=True),
+                distinct=True,
+            ),
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['milestone_next'] = self.object.milestones.filter(
+            is_completed=False,
+        ).order_by('position').first()
+        goal = get_object_or_404(LearningGoals, pk=self.kwargs.get('id'))
+        average_progress = round(LearningGoals.objects.filter(
+            owner=goal.owner,
+            status=LearningGoals.Status.ACTIVE
+        ).aggregate(
+            average=Avg('progress_percent')
+        )['average'] or 0)
+        context['average_progress'] = average_progress
+        context['completed_goals'] = LearningGoals.objects.filter(status=LearningGoals.Status.COMPLETED)
+        context['public_goals'] = LearningGoals.objects.filter(visibility=LearningGoals.Visibility.PUBLIC)
+        return context
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

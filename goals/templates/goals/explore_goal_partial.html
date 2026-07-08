@@ -1,68 +1,76 @@
-    <div class="results-heading">
-        <p><strong id="goal-result-count">{{ goals.count }}</strong> public goals</p>
-        <a href="{% url 'goals:explore' %}" class="clear">Clear filters</a>
-    </div>
+<div class="results-heading">
+    <p><strong id="goal-result-count">{{ goals.count }}</strong> public goals</p>
+    <a href="{% url 'goals:explore' %}" class="clear">Clear filters</a>
+</div>
 
 <section id="explore-goal-list" class="explore-goal-list" aria-label="Public goals">
-        {% for goal in goals %}
-            {% with goal.owner as user %}
-                <article
-                    class="explore-goal"
-                    data-title="{{ goal.title }}"
-                    data-owner="{{ user.first_name }} {{ user.last_name|slice:':1' }}"
-                    data-status="{{ goal.status }}"
-                    data-progress="{{ goal.progress_percent }}"
-                    data-created="{{ goal.created_at|date:'Ymd' }}"
-                    data-deadline="{{ goal.deadline|date:'Ymd' }}"
-                >
-                    <div class="goal-owner-column">
-                        <span class="community-avatar avatar-green">{{ user.first_name|slice:'1' }}{{ user.last_name|slice:':1' }}</span>
-                        <div>
-                            <strong>{{ user.first_name }} {{ user.last_name|slice:':1' }}.</strong>
-                            <span>{{ user.profile.location }}</span>
-                        </div>
+    {% for goal in goals %}
+        {% with goal.owner as user %}
+            <article
+                class="explore-goal"
+                data-title="{{ goal.title }}"
+                data-owner="{{ user.first_name }} {{ user.last_name|slice:':1' }}"
+                data-status="{{ goal.status }}"
+                data-progress="{{ goal.progress_percent }}"
+                data-created="{{ goal.created_at|date:'Ymd' }}"
+                data-deadline="{{ goal.deadline|date:'Ymd' }}"
+            >
+                <div class="goal-owner-column">
+                    <span class="community-avatar avatar-green">{{ user.first_name|slice:'1' }}{{ user.last_name|slice:':1' }}</span>
+                    <div>
+                        <strong>{{ user.first_name }} {{ user.last_name|slice:':1' }}.</strong>
+                        <span>{{ user.profile.location }}</span>
                     </div>
+                </div>
 
-                    <div class="goal-content">
-                        <div class="goal-topline">
+
+                <div class="goal-content">
+                    <div class="goal-topline">
+                        <div class="goal-badge-row">
                             <span class="status-badge status-{{ goal.status }}">{{ goal.status }}</span>
-                            <time datetime="2026-08-18">Due {{ goal.deadline|date:'F j' }}</time>
+                            {% if goal.owner == request.user %}
+                                <span class="owner-goal-badge">Your goal</span>
+                            {% endif %}
                         </div>
-                        <h2>{{ goal.title }}</h2>
-                        <p>{{ goal.description|truncatewords:20 }}</p>
-                        <div class="goal-meta">
-                            <span>
-                                {% if goal.total_milestones > 0 %}
-                                    {{ goal.completed_milestones }} of {{ goal.total_milestones }} milestones
-                                {% else %}
-                                    No milestones yet
-                                {% endif %}
-                            </span>
-                            <span>Updated: {{ goal.updated_at|timesince }} ago</span>
-                        </div>
+                        <time datetime="{{ goal.deadline|date:'Y-m-d' }}">Due {{ goal.deadline|date:'F j' }}</time>
                     </div>
-
-                    <div class="goal-progress-column">
-                        <div class="progress-label">
-                            <span>Progress</span>
-                            <strong>{{ goal.progress_percent }}%</strong>
-                        </div>
-                        <div class="explore-progress" role="progressbar" aria-valuenow="{{ goal.progress_percent }}" aria-valuemin="0" aria-valuemax="100">
-                            <span style="width: {{ goal.progress_percent }}%"></span>
-                        </div>
-                        <button type="button" class="view-goal-action">View goal</button>
+                    <h2>{{ goal.title }}</h2>
+                    <p>{{ goal.description|truncatewords:20 }}</p>
+                    <div class="goal-meta">
+                        <span>
+                            {% if goal.total_milestones > 0 %}
+                                {{ goal.completed_milestones }} of {{ goal.total_milestones }} milestones
+                            {% else %}
+                                No milestones yet
+                            {% endif %}
+                        </span>
+                        <span>Updated: {{ goal.updated_at|timesince }} ago</span>
                     </div>
-                </article>
-            {% endwith %}
-        {% empty %}
-               <section id="explore-empty-state" class="explore-empty-state">
-                    <strong>No public goals found</strong>
-                    <p>Try changing the search text or clearing the filters.</p>
-                    <a href="{% url 'goals:explore' %}" type="reset" class="clear">Clear filters</a>
-                </section>
-        {% endfor %}
+                </div>
 
-    </section>
-
-
+                <div class="goal-progress-column">
+                    <div class="progress-label">
+                        <span>Progress</span>
+                        <strong>{{ goal.progress_percent }}%</strong>
+                    </div>
+                    <div class="explore-progress" role="progressbar" aria-valuenow="{{ goal.progress_percent }}" aria-valuemin="0" aria-valuemax="100">
+                        <span style="width: {{ goal.progress_percent }}%"></span>
+                    </div>
+                    <div class="goal-card-actions">
+                        <a href="{% url 'goals:public_goal' goal.id %}" class="view-goal-action">View goal</a>
+                        {% if goal.owner == request.user %}
+                            <a href="{% url 'goals:edit' goal.id %}?next={{ request.path }}" class="edit-goal-action">Edit</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </article>
+        {% endwith %}
+    {% empty %}
+        <section id="explore-empty-state" class="explore-empty-state">
+            <strong>No public goals found</strong>
+            <p>Try changing the search text or clearing the filters.</p>
+            <a href="{% url 'goals:explore' %}" class="clear">Clear filters</a>
+        </section>
+    {% endfor %}
+</section>
 

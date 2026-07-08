@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Public goal detail - CommunityHub{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'goals/css/public_goal_detail.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="public-goal-page">
+    <nav class="public-goal-breadcrumbs" aria-label="Breadcrumb">
+        <a href="{% url 'goals:explore' %}">
+            <span aria-hidden="true">&larr;</span>
+            Explore goals
+        </a>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">{{ goal.title }}</span>
+    </nav>
+
+    <header class="public-goal-header">
+        <div class="public-goal-title">
+            <div class="goal-labels">
+                <span class="status-badge status-{{ goal.status }}">{{ goal.status|upper }}</span>
+                <span class="visibility-badge">{{ goal.visibility }} goal</span>
+                {% if goal.owner == request.user %}
+                    <span class="owner-goal-badge">Your goal</span>
+                {% endif %}
+            </div>
+
+            <h1>{{ goal.title }}</h1>
+            <p>{{ goal.description }}</p>
+
+            <div class="owner-strip">
+                <span class="owner-avatar" aria-hidden="true">{{ goal.owner.first_name|slice:'1' }}{{ goal.owner.last_name|slice:'1' }}</span>
+                <div>
+                    <strong>{{ goal.owner.first_name }} {{ goal.owner.last_name }}</strong>
+                    <span>{{ goal.owner.location }}</span>
+                </div>
+            </div>
+        </div>
+
+        <aside class="progress-card" aria-label="Goal progress">
+            <div class="progress-card-topline">
+                <span>Progress</span>
+                <strong>{{ goal.progress_percent }}%</strong>
+            </div>
+            <div class="public-progress" role="progressbar" aria-valuenow="{{ goal.progress_percent }}" aria-valuemin="0" aria-valuemax="100">
+                <span style="width: {{ goal.progress_percent }}%"></span>
+            </div>
+            <div class="progress-meta">
+                <span>
+                    {% if goal.completed_milestones > 0 %}
+                    {{ goal.completed_milestones }} of {{ goal.total_milestones }} milestones
+                    {% else %}
+                    No milestones yet
+                    {% endif %}
+                </span>
+                <span>Updated {{ goal.updated_at|timesince|date:'' }}</span>
+            </div>
+            {% if goal.owner == request.user %}
+                <a href="{% url 'goals:edit' goal.id %}?next={{ request.path }}" class="edit-public-goal-action">Edit goal</a>
+            {% endif %}
+        </aside>
+    </header>
+
+    <div class="public-goal-layout">
+        <main class="public-goal-main">
+            <section class="goal-section" aria-labelledby="overview-heading">
+                <div class="section-heading">
+                    <div>
+                        <p class="section-kicker">Overview</p>
+                        <h2 id="overview-heading">About this goal</h2>
+                    </div>
+                </div>
+                <p class="goal-description">
+                    {{ goal.description }}
+                </p>
+            </section>
+
+            <section class="goal-section" aria-labelledby="milestones-heading">
+                <div class="section-heading">
+                    <div>
+                        <p class="section-kicker">Milestone plan</p>
+                        <h2 id="milestones-heading">Learning path</h2>
+                    </div>
+                    <span class="section-count">{{ goal.milestones.all.count }} total</span>
+                </div>
+
+                <div class="public-milestone-list">
+                    {% for milestone in goal.milestones.all %}
+                    <article class="public-milestone {% if milestone.is_completed %}is-completed{% elif milestone == milestone_next %}is-current{% endif %}">
+                        <span class="milestone-marker" aria-hidden="true">
+                            {% if milestone.is_completed %}
+                                &#10003;
+                            {% else %}
+                                {{ milestone.position }}
+                            {% endif %}
+                        </span>
+                        <div>
+                            <h3>{{ milestone.title }}</h3>
+                            <p>Use AbstractUser and prepare profile fields.</p>
+                            <time datetime="2026-07-02">
+                                {% if milestone.is_completed %}
+                                    Completed {{ milestone.due_date|date:'F j' }}
+                                {% else %}
+                                    Due {{ milestone.due_date|date:'F j' }}
+                                {% endif %}
+                            </time>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="goal-section" aria-labelledby="activity-heading">
+                <div class="section-heading">
+                    <div>
+                        <p class="section-kicker">Progress history</p>
+                        <h2 id="activity-heading">Recent updates</h2>
+                    </div>
+                </div>
+
+                <div class="public-activity-list" data-activity-list>
+                    {% for progress in goal.progress.all %}
+                    <article class="public-activity">
+                        <span class="activity-percent">{{ progress.progress_percent }}%</span>
+                        <div>
+                            <p>{{ progress.note }}</p>
+                            <time datetime="2026-07-07T11:30">{{ progress.created_at|timesince }} ago</time>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+
+                {% if goal.progress.all.count > 4 %}
+                <button class="show-activity-button" type="button" data-toggle-activity>
+                    Show more updates
+                </button>
+                {% endif %}
+            </section>
+        </main>
+
+        <aside class="public-goal-sidebar">
+            <section class="sidebar-panel owner-panel" aria-labelledby="owner-heading">
+                <div class="owner-card-head">
+                    <span class="owner-avatar large" aria-hidden="true">{{ goal.owner.first_name|slice:'1' }} {{ goal.owner.last_name|slice:'1' }}</span>
+                    <div>
+                        <h2 id="owner-heading">{{ goal.owner.first_name }} {{ goal.owner.last_name }}</h2>
+                        <p>{{ goal.owner.location }}</p>
+                    </div>
+                </div>
+
+                <dl class="owner-stats">
+                    <div>
+                        <dt>Public goals</dt>
+                        <dd>{{ public_goals.count }}</dd>
+                    </div>
+                    <div>
+                        <dt>Completed</dt>
+                        <dd>{{ completed_goals.count }}</dd>
+                    </div>
+                    <div>
+                        <dt>Average progress</dt>
+                        <dd>{{ average_progress }}%</dd>
+                    </div>
+                </dl>
+
+                <a href="#" class="profile-link">View profile</a>
+            </section>
+
+            <section class="sidebar-panel" aria-labelledby="details-heading">
+                <h2 id="details-heading">Goal details</h2>
+                <dl class="goal-facts">
+                    <div>
+                        <dt>Status</dt>
+                        <dd>{{ goal.status|capfirst }}</dd>
+                    </div>
+                    <div>
+                        <dt>Deadline</dt>
+                        <dd>{{ goal.deadline|date:'F j, Y' }}</dd>
+                    </div>
+                    <div>
+                        <dt>Created</dt>
+                        <dd>{{ goal.created_at|date:'F j, Y' }}</dd>
+                    </div>
+                    <div>
+                        <dt>Visibility</dt>
+                        <dd>{{ goal.visibility|capfirst }}</dd>
+                    </div>
+                </dl>
+            </section>
+
+            <section class="sidebar-panel" aria-labelledby="next-heading">
+                <p class="section-kicker">Next milestone</p>
+                <h2 id="next-heading">{{ milestone_next.title }}</h2>
+                <p class="next-copy">Due {{ milestone_next.due_date|date:'F j' }}. This is the next visible step in the learner's plan.</p>
+            </section>
+        </aside>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'goals/js/public_goal_detail.js' %}"></script>
+{% endblock %}
