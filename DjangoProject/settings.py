@@ -40,7 +40,8 @@ BASE_APPS = [
 
 PROJECT_APPS = [
     'user.apps.UserConfig',
-    'goals.apps.GoalsConfig'
+    'goals.apps.GoalsConfig',
+    'study_groups.apps.StudyGroupsConfig',
 ]
 
 THIRD_WAY_APPS = [

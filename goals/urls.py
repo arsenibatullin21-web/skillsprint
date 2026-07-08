@@ -28,5 +28,5 @@ urlpatterns = [
     path('api/v1/milestone/<int:pk>/create/', views.MilestoneCreateAPIView.as_view(), name='api_create_milestone'),
     path('api/v1/milestone/<int:pk>/update/', views.MilestoneUpdateAPIView.as_view(), name='api_update_milestone'),
     path('api/v1/milestone/<int:pk>/delete/', views.MilestoneDeleteAPIView.as_view(), name='api_delete_milestone')
-    # path('api/v1/'),
+
 ]
