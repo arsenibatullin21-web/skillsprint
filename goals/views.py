@@ -1,19 +1,20 @@
 from datetime import timedelta
-from gc import get_objects
-
+from rest_framework import generics, permissions
+from goals.permissions import IsAuthorOrReadOnly
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
 from django.db.models import Avg, Count, Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
-from django.template.context_processors import request
 from django.utils import timezone
 
 from django.views.generic import ListView, CreateView, DetailView, UpdateView, DeleteView
 from django.urls import reverse_lazy, reverse
 
 from goals.forms import GoalCreateForm, MilestoneFormSet, MilestoneUpdateForm, ProgressCreateForm
-from goals.models import LearningGoals, ProgressEntry
+from goals.models import LearningGoals, ProgressEntry, Milestone
+from goals.serializers import GoalsListDetailSerializer, GoalsListDetailSerializer, GoalsCreateSerializer, \
+    GoalUpdateSerializer, ProgressCreateSerializer, MilestoneSerializer
 
 
 class MyGoalsView(ListView):
@@ -362,6 +363,104 @@ class PublicGoalView(DetailView):
         context['completed_goals'] = LearningGoals.objects.filter(status=LearningGoals.Status.COMPLETED)
         context['public_goals'] = LearningGoals.objects.filter(visibility=LearningGoals.Visibility.PUBLIC)
         return context
+
+class GoalsListAPIView(generics.ListAPIView):
+    '''For users all goals '''
+    permission_classes = [permissions.IsAuthenticated, ]
+    model = LearningGoals
+    serializer_class = GoalsListDetailSerializer
+
+
+    def get_queryset(self):
+        return LearningGoals.objects.filter(owner=self.request.user)
+
+class GoalDetailApiView(generics.RetrieveAPIView):
+    '''For users one goal detail and public goal'''
+    permission_classes = [permissions.IsAuthenticated, ]
+    serializer_class = GoalsListDetailSerializer
+    model = LearningGoals
+
+
+
+    def get_queryset(self):
+        return LearningGoals.objects.filter(owner=self.request.user)
+
+class PublicGoalsListAPIView(generics.ListAPIView):
+    '''For explore other users goals'''
+    permission_classes = [permissions.IsAuthenticated, ]
+    serializer_class = GoalsListDetailSerializer
+    model = LearningGoals
+    queryset = LearningGoals.objects.filter(visibility=LearningGoals.Visibility.PUBLIC)
+
+
+class GoalCreateAPIView(generics.CreateAPIView):
+    '''For creating goals'''
+    permission_classes = [permissions.IsAuthenticated, ]
+    model = LearningGoals
+    serializer_class = GoalsCreateSerializer
+
+
+class GoalUpdateAPIView(generics.UpdateAPIView):
+    '''Update user's goal'''
+    model = LearningGoals
+    permission_classes = [IsAuthorOrReadOnly, ]
+    serializer_class = GoalUpdateSerializer
+
+    def get_queryset(self):
+        return LearningGoals.objects.filter(owner=self.request.user)
+
+class ProgressCreateAPIView(generics.CreateAPIView):
+    '''To create progress entry object'''
+    model = ProgressEntry
+    serializer_class = ProgressCreateSerializer
+    permission_classes = [permissions.IsAuthenticated, ]
+
+    def perform_create(self, serializer):
+        goal = get_object_or_404(LearningGoals, pk=self.kwargs['pk'], owner=self.request.user)
+        progress = serializer.save(goal=goal)
+        goal.progress_percent = progress.progress_percent
+        goal.save(update_fields=['progress_percent'])
+
+class GoalDeleteAPIView(generics.DestroyAPIView):
+    '''Delete goals'''
+    permission_classes = [permissions.IsAuthenticated, ]
+
+    def get_queryset(self):
+        return LearningGoals.objects.filter(owner=self.request.user)
+
+
+class MilestoneCreateAPIView(generics.CreateAPIView):
+    serializer_class = MilestoneSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        goal = get_object_or_404(LearningGoals, pk=self.kwargs.get('pk'), owner=self.request.user)
+        position = goal.milestones.count() + 1
+        serializer.save(
+            goal=goal,
+            position=position
+        )
+
+class MilestoneUpdateAPIView(generics.UpdateAPIView):
+    serializer_class = MilestoneSerializer
+    permission_classes = [permissions.IsAuthenticated, ]
+
+    def get_queryset(self):
+        return Milestone.objects.all()
+
+class MilestoneDeleteAPIView(generics.DestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated, ]
+
+    def get_queryset(self):
+        return Milestone.objects.all()
+
+
+
+
+
+
+
+
 
 
 
