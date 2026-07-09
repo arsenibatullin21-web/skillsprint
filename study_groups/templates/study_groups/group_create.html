@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Create study group - CommunityHub{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'study_groups/css/group_create.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="group-create-page">
+    <nav class="group-create-breadcrumbs" aria-label="Breadcrumb">
+        <a href="{% url 'study_groups:my_groups' %}">
+            <span aria-hidden="true">&larr;</span>
+            My study groups
+        </a>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">Create group</span>
+    </nav>
+
+    <header class="group-create-header">
+        <div>
+            <p class="group-create-kicker">Study groups</p>
+            <h1>Create a new group</h1>
+            <p>Set up a focused space where learners can join, share resources, and practice together.</p>
+        </div>
+    </header>
+
+    <form class="group-create-form" action="" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+              <ul class="non-field-errors">
+                    <li>{{ form.non_field_errors }}</li>
+                </ul>
+        {% endif %}
+        <main class="group-form-main">
+            <section class="form-section" aria-labelledby="basics-heading">
+                <div class="section-heading">
+                    <div>
+                        <p class="section-kicker">Basics</p>
+                        <h2 id="basics-heading">Group identity</h2>
+                    </div>
+                </div>
+
+                <div class="field-grid">
+                    <div class="form-field">
+                        <label for="group-name">Group name</label>
+                        <input
+                            id="group-name"
+                            name="{{ form.name.html_name }}"
+                            type="text"
+                            maxlength="50"
+                            placeholder="Backend Builders"
+                            autocomplete="off"
+                            data-slug-source
+                            data-count-source
+                            data-count-target="#name-count"
+                            value="{{ form.name.value|default_if_none:'' }}"
+                        >
+                        <div class="field-helper">
+                            <span>Slug preview: <strong id="slug-preview">group-name</strong></span>
+                            <span id="name-count">0/50</span>
+                        </div>
+                        {% if form.name.errors %}
+                            <span class="field-error">{{ form.name.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-field">
+                        <label for="group-topic">Topic</label>
+                        <input
+                            id="group-topic"
+                            name="{{ form.topic.html_name }}"
+                            type="text"
+                            placeholder="Django, DRF, PostgreSQL"
+                            autocomplete="off"
+                            value="{{ form.topic.value|default_if_none:'' }}"
+                        >
+                        {% if form.topic.errors %}
+                            <span class="field-error">{{ form.topic.errors.0 }}</span>
+                        {% else %}
+                            <span class="field-note">Use a short focus area for filtering and scanning.</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </section>
+
+            <section class="form-section" aria-labelledby="description-heading">
+                <div class="section-heading">
+                    <div>
+                        <p class="section-kicker">Details</p>
+                        <h2 id="description-heading">Description and rules</h2>
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label for="group-description">Description</label>
+                    <textarea
+                        id="group-description"
+                        name="{{ form.description.html_name }}"
+                        maxlength="500"
+                        rows="6"
+                        placeholder="Describe what members will practice together."
+                        data-count-source
+                        data-count-target="#description-count"
+                    >{{ form.description.value|default_if_none:'' }}</textarea>
+
+                    {% if form.description.errors %}
+                    <span class="field-error">{{ form.description.errors.0 }}</span>
+                    {% else %}
+                    <div class="field-helper">
+                        <span>Shown on group cards and detail pages.</span>
+                        <span id="description-count">0/500</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-field">
+                    <label for="group-rules">Group rules</label>
+                    <textarea
+                        id="group-rules"
+                        name="{{ form.rules.html_name }}"
+                        maxlength="500"
+                        rows="5"
+                        placeholder="Add expectations for posting, feedback, and participation."
+                        data-count-source
+                        data-count-target="#rules-count"
+                    >{{ form.rules.value|default_if_none:'' }}</textarea>
+                    {% if form.rules.errors %}
+                        <span class="field-error">{{ form.rules.errors.0 }}</span>
+                    {% else %}
+                    <div class="field-helper">
+                        <span>Keep rules practical and easy to follow.</span>
+                        <span id="rules-count">0/500</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <section class="form-section" aria-labelledby="visibility-heading">
+                <div class="section-heading">
+                    <div>
+                        <p class="section-kicker">Access</p>
+                        <h2 id="visibility-heading">Visibility</h2>
+                    </div>
+                </div>
+
+                <fieldset class="visibility-options">
+                    <legend class="sr-only">Choose group visibility</legend>
+
+                    <label class="visibility-card">
+                        <input type="radio" name="{{ form.visibility.html_name }}" value="public" {% if form.visibility.value == 'public' or not form.visibility.value %}checked{% endif %}>
+                        <span>
+                            <strong>Public</strong>
+                            <small>Visible in Explore groups and open for discovery.</small>
+                        </span>
+                    </label>
+
+                    <label class="visibility-card">
+                        <input type="radio" name="{{ form.visibility.html_name }}" value="private" {% if form.visibility.value == 'private' %}checked{% endif %}>
+                        <span>
+                            <strong>Private</strong>
+                            <small>Only invited or approved members can see group content.</small>
+                        </span>
+                    </label>
+                     {% if form.visibility.errors %}
+                        <span class="field-error">{{ form.visibility.errors.0 }}</span>
+                    {% endif %}
+                </fieldset>
+            </section>
+        </main>
+
+        <aside class="group-form-sidebar">
+            <section class="preview-card" aria-labelledby="preview-heading">
+                <p class="section-kicker">Preview</p>
+                <h2 id="preview-heading">Group card</h2>
+
+                <div class="avatar-preview" data-avatar-preview aria-hidden="true">G</div>
+
+                <div class="preview-copy">
+                    <span class="visibility-badge">Public</span>
+                    <h3 data-preview-name>Group name</h3>
+                    <p data-preview-description>Your group description will appear here.</p>
+                </div>
+            </section>
+
+            <section class="upload-card" aria-labelledby="avatar-heading">
+                <h2 id="avatar-heading">Group avatar</h2>
+                <label class="avatar-upload" for="group-avatar">
+                    <input id="group-avatar" name="{{ form.avatar.html_name }}" type="file" accept="image/*" data-avatar-input>
+                    <span>Choose image</span>
+                    <small>PNG or JPG works best.</small>
+                </label>
+                 {% if form.avatar.errors %}
+                        <span class="field-error">{{ form.avatar.errors.0 }}</span>
+                 {% endif %}
+            </section>
+
+            <div class="form-actions">
+                <button type="submit" class="primary-submit">Create group</button>
+                <a href="{% url 'study_groups:my_groups' %}" class="secondary-cancel">Cancel</a>
+            </div>
+        </aside>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'study_groups/js/group_create.js' %}"></script>
+{% endblock %}

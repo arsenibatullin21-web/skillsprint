@@ -1,0 +1,10 @@
+from django import forms
+
+from study_groups.models import StudyGroup
+
+
+class GroupCreateForm(forms.ModelForm):
+
+    class Meta:
+        model = StudyGroup
+        fields = ['name', 'description', 'visibility', 'avatar', 'rules', 'topic']

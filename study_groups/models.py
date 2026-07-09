@@ -12,11 +12,11 @@ class StudyGroup(models.Model):
     owner = models.ForeignKey(to=get_user_model(), on_delete=models.CASCADE, related_name='study_groups')
     name = models.CharField(max_length=50)
     slug = models.SlugField(max_length=50)
-    description = models.TextField(max_length=500, null=True, blank=True)
+    description = models.TextField(max_length=500)
     visibility = models.CharField(choices=Visibility.choices, default=Visibility.PUBLIC)
     avatar = models.ImageField(upload_to='group_image/', default='media/avatars/noimages.png')
-    rules = models.TextField(max_length=500, null=True, blank=True)
-    topic = models.CharField(null=True, blank=True)
+    rules = models.TextField(max_length=500)
+    topic = models.CharField(max_length=50)
     updated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -58,6 +58,40 @@ class GroupMembership(models.Model):
     def __str__(self):
         return f"{self.group} -> {self.user.username} -> {self.joined_at}"
 
+
+class GroupPost(models.Model):
+    group = models.ForeignKey(to=StudyGroup, on_delete=models.CASCADE, related_name='posts')
+    author = models.ForeignKey(to=get_user_model(), on_delete=models.CASCADE, related_name='posts')
+    title = models.CharField(max_length=50)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['created_at']
+        db_table = 'group_post'
+        verbose_name = 'Group Post'
+        verbose_name_plural = 'Group Posts'
+
+    def __str__(self):
+        return self.title
+
+class GroupResource(models.Model):
+    group = models.ForeignKey(to=StudyGroup, on_delete=models.CASCADE, related_name='resource')
+    title = models.CharField(max_length=50)
+    url = models.URLField()
+    description = models.TextField(max_length=500, null=True, blank=True)
+    created_by = models.CharField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+        db_table = 'group_resource'
+        verbose_name = 'Group Resource'
+        verbose_name_plural = 'Group Resources'
+
+    def __str__(self):
+        return self.title
 
 
 
