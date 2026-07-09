@@ -14,6 +14,10 @@ class StudyGroup(models.Model):
     slug = models.SlugField(max_length=50)
     description = models.TextField(max_length=500, null=True, blank=True)
     visibility = models.CharField(choices=Visibility.choices, default=Visibility.PUBLIC)
+    avatar = models.ImageField(upload_to='group_image/', default='media/avatars/noimages.png')
+    rules = models.TextField(max_length=500, null=True, blank=True)
+    topic = models.CharField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

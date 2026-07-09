@@ -1,0 +1,80 @@
+<div class="groups-panel-header">
+            <div>
+                <h2 id="groups-list-heading">Groups you joined</h2>
+                <p>Open a group to see members, shared progress, resources, and recent activity.</p>
+            </div>
+            <form action="{% url 'study_groups:my_groups' %}" method="GET"
+                  hx-target="#groups-catalog"
+                  hx-get="{% url 'study_groups:my_groups' %}"
+                  hx-trigger="change"
+            >
+            <fieldset class="group-status-tabs" aria-label="Group filters">
+                <label>
+                    <input type="radio" name="role" value="all" {% if selected_role == 'all' or not selected_role %}checked{% endif %}>
+                    <span>All</span>
+                </label>
+
+                <label>
+                    <input type="radio" name="role" value="owner" {% if selected_role == 'owner' %}checked{% endif %}>
+                    <span>Owner</span>
+                </label>
+
+                <label>
+                    <input type="radio" name="role" value="moderator" {% if selected_role == 'moderator' %}checked{% endif %}>
+                    <span>Moderator</span>
+                </label>
+
+                <label>
+                    <input type="radio" name="role" value="member" {% if selected_role == 'member' %}checked{% endif %}>
+                    <span>Member</span>
+                </label>
+            </fieldset>
+            </form>
+        </div>
+
+        <div class="joined-group-list">
+            {% for membership in memberships %}
+                {% with membership.group as group %}
+                <article class="joined-group-card">
+                    <div class="group-main">
+                        <div class="group-avatar" aria-hidden="true"><img src="{{ group.avatar.url }}" alt=""></div>
+
+                        <div class="group-copy">
+                            <div class="group-topline">
+                                <span class="visibility-badge visibility-public">{{ group.visibility }}</span>
+                                <span class="role-badge role-{{ membership.role }}">{{ membership.role }}</span>
+                            </div>
+
+                            <h3>{{ group.name }}</h3>
+                            <p>{{ group.description|truncatewords:'20' }}</p>
+
+                            <div class="group-meta">
+                                <span>Joined {{ membership.joined_at|date:'F j, Y' }}</span>
+                                <span>Created {{ group.created_at|date:'F j, Y' }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="group-side">
+                        <dl>
+                            <div>
+                                <dt>Members</dt>
+                                <dd>{{ group.membership.count }}</dd>
+                            </div>
+                            <div>
+                                <dt>Your role</dt>
+                                <dd>{{ membership.role }}</dd>
+                            </div>
+                        </dl>
+
+                        <div class="group-card-actions">
+                            <a href="#" class="open-group-action">Open group</a>
+                            {% if membership.role == 'owner' or membership.role == 'moderator' %}
+                            <a href="#" class="manage-group-action">Manage</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </article>
+                {% endwith %}
+            {% endfor %}
+        </div>

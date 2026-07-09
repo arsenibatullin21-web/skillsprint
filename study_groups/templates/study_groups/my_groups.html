@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My study groups - CommunityHub{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'study_groups/css/my_groups.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="my-groups-page">
+    <header class="my-groups-header">
+        <div>
+            <p class="groups-kicker">Study groups</p>
+            <h1>My study groups</h1>
+            <p>Keep track of the communities you joined and continue learning with other people.</p>
+        </div>
+
+        <div class="groups-header-actions">
+            <a href="#" class="secondary-group-action">Explore groups</a>
+            <a href="#" class="primary-group-action">
+                <span aria-hidden="true">+</span>
+                Create group
+            </a>
+        </div>
+    </header>
+
+    <section class="group-summary-grid" aria-label="Study group summary">
+        <article class="summary-card">
+            <strong>{{ joined_groups.all.count }}</strong>
+            <span>Joined groups</span>
+        </article>
+        <article class="summary-card">
+            <strong>{{ owned_groups.all.count }}</strong>
+            <span>Owned groups</span>
+        </article>
+        <article class="summary-card">
+            <strong>{{ moderator_groups.all.count }}</strong>
+            <span>Moderator roles</span>
+        </article>
+        <article class="summary-card">
+            <strong>{{ public_groups.all.count }}</strong>
+            <span>Public groups</span>
+        </article>
+    </section>
+
+    <section class="groups-panel" aria-labelledby="groups-list-heading">
+        <div id="groups-catalog">
+            {% include 'study_groups/partial/my_groups_partial.html' %}
+        </div>
+
+    </section>
+</div>
+{% endblock %}
