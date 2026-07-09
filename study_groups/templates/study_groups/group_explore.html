@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Explore study groups - CommunityHub{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'study_groups/css/group_explore.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="group-explore-page">
+    <header class="group-explore-header">
+        <div>
+            <p class="groups-kicker">Explore groups</p>
+            <h1>Find study groups</h1>
+            <p>Discover public learning circles, join a group, and practice with people working on similar skills.</p>
+        </div>
+
+        <div class="explore-header-actions">
+            <a href="{% url 'study_groups:my_groups' %}" class="secondary-action">My groups</a>
+            <a href="{% url 'study_groups:create' %}" class="primary-action">
+                <span aria-hidden="true">+</span>
+                Create group
+            </a>
+        </div>
+    </header>
+
+    <div id="group-catalog">
+        {% include 'study_groups/partial/group_explore_partial.html' %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'study_groups/js/group_explore.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,110 @@
+  <form action="{% url 'study_groups:explore' %}" method="GET"
+        hx-get="{% url 'study_groups:explore' %}"
+          hx-trigger="change, keyup delay:400ms from:#group-search"
+          hx-target="#group-catalog"
+    >
+    <section class="explore-toolbar" aria-label="Group filters">
+        <div class="search-field">
+            <label for="group-search">Search groups</label>
+            <div>
+                <span aria-hidden="true">&#128269;</span>
+                <input
+                    id="group-search"
+                    type="search"
+                    placeholder="Search by group, topic, or description"
+                    autocomplete="off"
+                    name="search"
+                    value="{{ selected_search|default_if_none:'' }}"
+                >
+            </div>
+        </div>
+
+        <div class="filter-field">
+            <label for="topic-filter">Topic</label>
+            <select id="topic-filter" name="topic">
+                <option value="all" {% if selected_topic == 'all' or not selected_topic %}selected{% endif %}>All topics</option>
+                {% for topic in topics %}
+                    <option value="{{ topic }}" {% if selected_topic == topic %}selected{% endif %}>{{ topic|capfirst }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="filter-field">
+            <label for="size-filter">Size</label>
+            <select id="size-filter" name="size">
+                <option value="all" {% if selected_size == 'all' or not selected_size %}selected{% endif %}>Any size</option>
+                <option value="small" {% if selected_size == 'small' %}selected{% endif %}>Small, 1-10</option>
+                <option value="medium" {% if selected_size == 'medium' %}selected{% endif %}>Medium, 11-30</option>
+                <option value="large" {% if selected_size == 'large' %}selected{% endif %}>Large, 31+</option>
+            </select>
+        </div>
+
+        <div class="filter-field">
+            <label for="sort-groups">Sort by</label>
+            <select id="sort-groups" name="sort">
+                <option value="recommended" {% if selected_sort == 'recommended' or not selected_sort %}selected{% endif %}>Recommended</option>
+                <option value="newest" {% if selected_sort == 'newest' %}selected{% endif %}>Newest</option>
+                <option value="members" {% if selected_sort == 'members' %}selected{% endif %}>Most members</option>
+            </select>
+        </div>
+    </section>
+
+    <div class="results-heading">
+        <p><strong id="group-result-count">{{ groups.count }}</strong> public groups</p>
+        <button type="button" id="clear-group-filters">Clear filters</button>
+    </div>
+    </form>
+
+    <section class="group-grid" id="group-grid" aria-label="Public study groups">
+        {% for group in groups %}
+        <article class="explore-group-card" data-topic="{{ group.topic }}" data-members="{{ group.membership.count }}" data-created="20260709">
+            <div class="group-card-header">
+                {% if not group.avatar %}
+                <div class="group-avatar avatar-green" aria-hidden="true">{{ group.name|slice:'1'|capfirst }}</div>
+                {% else %}
+                <div class="group-avatar group-avatar-image">
+                    <img src="{{ group.avatar.url }}" alt="{{ group.name }}">
+                </div>
+                {% endif %}
+                <div class="group-badges">
+                    <span class="visibility-badge">{{ group.visibility }}</span>
+                    <span class="topic-badge">{{ group.topic }}</span>
+                </div>
+            </div>
+
+            <div class="group-card-body">
+                <h2>{{ group.name }}</h2>
+                <p>{{ group.description }}</p>
+            </div>
+
+            <dl class="group-stats">
+                <div>
+                    <dt>Members</dt>
+                    <dd>{{ group.active_members.count }}</dd>
+                </div>
+                <div>
+                    <dt>Posts</dt>
+                    <dd>{{ group.posts.count }}</dd>
+                </div>
+                <div>
+                    <dt>Resources</dt>
+                    <dd>{{ group.resources.count }}</dd>
+                </div>
+            </dl>
+
+            <div class="group-card-footer">
+                <span>Created {{ group.created_at|date:'F j' }}</span>
+                <div>
+                    <a href="#" class="view-group-action">View</a>
+                    <button type="button" class="join-group-action">Join</button>
+                </div>
+            </div>
+        </article>
+        {% endfor %}
+    </section>
+
+    <section class="empty-groups-state" id="empty-groups-state" hidden>
+        <strong>No groups found</strong>
+        <p>Try changing the search text or clearing the filters.</p>
+        <button type="button" data-clear-filters>Clear filters</button>
+    </section>

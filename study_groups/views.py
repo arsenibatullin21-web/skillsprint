@@ -1,4 +1,6 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Q, Count
+from django.db.models.functions import Lower, Trim
 from django.shortcuts import render
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView
@@ -16,7 +18,7 @@ class MyGroupsView(LoginRequiredMixin, ListView):
     model = GroupMembership
 
     def get_queryset(self):
-        queryset = GroupMembership.objects.filter(user=self.request.user)
+        queryset = GroupMembership.objects.filter(user=self.request.user, status=GroupMembership.Status.ACTIVE)
         role = self.request.GET.get('role')
         if role and role != 'all':
             queryset = queryset.filter(role=role)
@@ -24,7 +26,7 @@ class MyGroupsView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        user_groups = StudyGroup.objects.filter(membership__user=self.request.user)
+        user_groups = StudyGroup.objects.filter(membership__user=self.request.user, membership__status=GroupMembership.Status.ACTIVE)
         context['user_groups'] = user_groups
         context['owned_groups'] = user_groups.filter(owner=self.request.user)
         context['moderator_groups'] = user_groups.filter(membership__role=GroupMembership.Role.MODERATOR)
@@ -54,7 +56,74 @@ class GroupCreateView(LoginRequiredMixin,CreateView):
         GroupMembership.objects.create(
             group=self.object,
             user=self.request.user,
-            role=GroupMembership.Role.OWNER
+            role=GroupMembership.Role.OWNER,
+            status=GroupMembership.Status.ACTIVE
         )
         return response
+
+class GroupExploreView(ListView):
+    model = StudyGroup
+    template_name = 'study_groups/group_explore.html'
+    context_object_name = 'groups'
+
+    def get_queryset(self):
+        queryset = StudyGroup.objects.filter(
+            visibility=StudyGroup.Visibility.PUBLIC
+        ).annotate(
+            members_count=Count(
+                'membership',
+                filter=Q(membership__status=GroupMembership.Status.ACTIVE),
+            ),
+            clean_topic=Lower(Trim('topic')),
+        )
+
+        search = self.request.GET.get('search')
+        topic = self.request.GET.get('topic')
+        size = self.request.GET.get('size')
+        sort = self.request.GET.get('sort')
+
+        if search:
+            queryset = queryset.filter(Q(name__icontains=search) & Q(topic__icontains=search) & Q(description__icontains=search))
+
+        if topic and topic != 'all':
+            queryset = queryset.filter(clean_topic=topic)
+
+        if size and size != 'all':
+            if size == 'small':
+                queryset = queryset.filter(members_count__gte=1, members_count__lte=10)
+            elif size == 'medium':
+                queryset = queryset.filter(members_count__gte=11, members_count__lte=30)
+            elif size == 'large':
+                queryset = queryset.filter(members_count__gte=31)
+
+        if sort and sort != 'recommended':
+            if sort == 'newest':
+                queryset = queryset.order_by('-created_at')
+            elif sort == 'members':
+                queryset = queryset.order_by('-members_count')
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        topics = StudyGroup.objects.annotate(
+            clean_topic=Lower(Trim('topic'))
+        ).exclude(
+            clean_topic=''
+        ).values_list(
+            'clean_topic',
+            flat=True
+        ).distinct().order_by('clean_topic')
+        context['topics'] = topics
+        context['selected_topic'] = self.request.GET.get('topic')
+        context['selected_size'] = self.request.GET.get('size')
+        context['selected_sort'] = self.request.GET.get('sort')
+        context['selected_search'] = self.request.GET.get('search')
+        return context
+
+    def get_template_names(self):
+        if self.request.headers.get('HX-Request') == 'true':
+            return ['study_groups/partial/group_explore_partial.html']
+        return ['study_groups/group_explore.html']
+
+
 

@@ -12,11 +12,11 @@ class StudyGroup(models.Model):
     owner = models.ForeignKey(to=get_user_model(), on_delete=models.CASCADE, related_name='study_groups')
     name = models.CharField(max_length=50)
     slug = models.SlugField(max_length=50)
-    description = models.TextField(max_length=500)
+    description = models.TextField(max_length=500, null=True, blank=True)
     visibility = models.CharField(choices=Visibility.choices, default=Visibility.PUBLIC)
     avatar = models.ImageField(upload_to='group_image/', default='media/avatars/noimages.png')
-    rules = models.TextField(max_length=500)
-    topic = models.CharField(max_length=50)
+    rules = models.TextField(max_length=500, blank=True, null=True)
+    topic = models.CharField(max_length=50, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -34,11 +34,26 @@ class StudyGroup(models.Model):
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
 
+    @property
+    def active_members(self):
+        return self.membership.filter(status=GroupMembership.Status.ACTIVE)
+
 class GroupMembership(models.Model):
     class Role(models.TextChoices):
         OWNER = 'owner', 'Owner'
         MODERATOR = 'moderator', 'Moderator'
         MEMBER = 'member', 'Member'
+
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        ACTIVE = 'active', 'Active'
+        REJECTED = 'rejected', 'Rejected'
+
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.ACTIVE
+    )
     group = models.ForeignKey(to=StudyGroup, on_delete=models.CASCADE, related_name='membership')
     user = models.ForeignKey(to=get_user_model(), on_delete=models.CASCADE, related_name='membership')
     role = models.CharField(choices=Role.choices, default=Role.MEMBER)
@@ -77,7 +92,7 @@ class GroupPost(models.Model):
         return self.title
 
 class GroupResource(models.Model):
-    group = models.ForeignKey(to=StudyGroup, on_delete=models.CASCADE, related_name='resource')
+    group = models.ForeignKey(to=StudyGroup, on_delete=models.CASCADE, related_name='resources')
     title = models.CharField(max_length=50)
     url = models.URLField()
     description = models.TextField(max_length=500, null=True, blank=True)
