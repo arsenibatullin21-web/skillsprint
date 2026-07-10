@@ -68,9 +68,9 @@
                         </dl>
 
                         <div class="group-card-actions">
-                            <a href="#" class="open-group-action">Open group</a>
+                            <a href="{% url 'study_groups:detail' group.id %}" class="open-group-action">Open group</a>
                             {% if membership.role == 'owner' or membership.role == 'moderator' %}
-                            <a href="#" class="manage-group-action">Manage</a>
+                                <a href="{% url 'study_groups:edit' group.id %}" class="manage-group-action">Manage</a>
                             {% endif %}
                         </div>
                     </div>

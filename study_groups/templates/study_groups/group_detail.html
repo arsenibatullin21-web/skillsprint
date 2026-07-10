@@ -78,7 +78,7 @@
 
             {% if membership.role == 'owner' or membership.role == 'moderator' %}
             <div class="owner-actions">
-                <a href="#" class="manage-action">Edit group</a>
+                <a href="{% url 'study_groups:edit' group.id %}" class="manage-action">Edit group</a>
                 <a href="#" class="manage-action">Review requests</a>
             </div>
             {% endif %}
