@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Study group detail - CommunityHub{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'study_groups/css/group_detail.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="group-detail-page">
+    <nav class="group-breadcrumbs" aria-label="Breadcrumb">
+        <a href="{% url 'study_groups:explore' %}">
+            <span aria-hidden="true">&larr;</span>
+            Explore groups
+        </a>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">{{ group.name }}</span>
+    </nav>
+
+    <header class="group-detail-header">
+        <div class="group-title-area">
+            <div class="group-heading-row">
+                {% if group.avatar %}
+                    <div class="group-avatar group-avatar-image">
+                        <img src="{{ group.avatar.url }}" alt="{{ group.name }}">
+                    </div>
+                {% else %}
+                    <div class="group-avatar avatar-green" aria-hidden="true">{{ group.name|slice:":1"|capfirst }}</div>
+                {% endif %}
+
+                <div>
+                    <div class="group-labels">
+                        <span class="visibility-badge visibility-{{ group.visibility }}">{{ group.visibility }}</span>
+                        <span class="topic-badge">{{ group.topic|default:"General" }}</span>
+                    </div>
+                    <h1>{{ group.name }}</h1>
+                </div>
+            </div>
+
+            <p class="group-description">
+                {{ group.description|default:"No description yet." }}
+            </p>
+
+            <div class="group-owner">
+                <span class="owner-avatar" aria-hidden="true">{{ group.owner.first_name|slice:":1" }}{{ group.owner.last_name|slice:":1" }}</span>
+                <span>
+                    <strong>{{ group.owner.username }}</strong>
+                    <small>Owner · Created {{ group.created_at|date:"F j, Y" }}</small>
+                </span>
+            </div>
+        </div>
+
+        <aside class="group-action-panel">
+            <div class="membership-state">
+                <span class="state-label">Membership</span>
+                <strong data-membership-label>
+                    {% if membership %}
+                        {% if membership.role == 'owner' %}
+                            Owner
+                        {% elif membership.role == 'moderator' %}
+                            Moderator
+                        {% else %}
+                            Joined
+                        {% endif %}
+                    {% else %}
+                        Not joined
+                    {% endif %}
+                </strong>
+            </div>
+
+            <div class="group-action-buttons">
+                <button type="button" class="primary-join-action" data-join-action data-public-label="Join group" data-private-label="Request to join">
+                    Join group
+                </button>
+                <a href="#" class="secondary-message-action">Message owner</a>
+            </div>
+
+            {% if membership.role == 'owner' or membership.role == 'moderator' %}
+            <div class="owner-actions">
+                <a href="#" class="manage-action">Edit group</a>
+                <a href="#" class="manage-action">Review requests</a>
+            </div>
+            {% endif %}
+        </aside>
+
+    </header>
+
+    <section class="group-stats-row" aria-label="Group statistics">
+        <article>
+            <strong>{{ group.active_members.count }}</strong>
+            <span>Members</span>
+        </article>
+        <article>
+            <strong>{{ group.posts.count }}</strong>
+            <span>Posts</span>
+        </article>
+        <article>
+            <strong>{{ group.resources.count }}</strong>
+            <span>Resources</span>
+        </article>
+        <article>
+            <strong>{{ group.updated_at|timesince }}</strong>
+            <span>Last updated</span>
+        </article>
+    </section>
+
+    <div class="group-detail-layout">
+        <main class="group-detail-main">
+            <section class="group-section" aria-labelledby="rules-heading">
+                <div class="section-heading">
+                    <div>
+                        <p class="section-kicker">Guidelines</p>
+                        <h2 id="rules-heading">Group rules</h2>
+                    </div>
+                </div>
+                <p class="rules-copy">{{ group.rules|default:"No rules have been added yet." }}</p>
+            </section>
+
+            <section class="group-section" aria-labelledby="posts-heading">
+                <div class="section-heading">
+                    <div>
+                        <p class="section-kicker">Activity</p>
+                        <h2 id="posts-heading">Recent posts</h2>
+                    </div>
+                    {% if membership.role == 'owner' or membership.role == 'moderator' %}
+                        <a href="#" class="section-link">New post</a>
+                    {% endif %}
+                </div>
+
+                <div class="post-list">
+                    {% for post in group.posts.all %}
+                        <article class="group-post">
+                            <div class="post-topline">
+                                <h3>{{ post.title }}</h3>
+                                <time datetime="{{ post.created_at|date:'Y-m-d' }}">{{ post.created_at|date:"F j" }}</time>
+                            </div>
+                            <p>{{ post.content|truncatewords:28 }}</p>
+                            <span>By {{ post.author.username }}</span>
+                        </article>
+                    {% empty %}
+                        <p class="empty-copy">No posts yet.</p>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="group-section" aria-labelledby="resources-heading">
+                <div class="section-heading">
+                    <div>
+                        <p class="section-kicker">Library</p>
+                        <h2 id="resources-heading">Resources</h2>
+                    </div>
+                    {% if membership.role == 'owner' or membership.role == 'moderator' %}
+                        <a href="#" class="section-link">Add resource</a>
+                    {% endif %}
+                </div>
+
+                <div class="resource-list">
+                    {% for resource in group.resources.all %}
+                        <article class="group-resource">
+                            <div>
+                                <h3>{{ resource.title }}</h3>
+                                <p>{{ resource.description|default:"No description."|truncatewords:18 }}</p>
+                                <span>Added by {{ resource.created_by|default:"member" }}</span>
+                            </div>
+                            <a href="{{ resource.url }}" target="_blank" rel="noopener">Open</a>
+                        </article>
+                    {% empty %}
+                        <p class="empty-copy">No resources yet.</p>
+                    {% endfor %}
+                </div>
+            </section>
+        </main>
+
+        <aside class="group-detail-sidebar">
+            <section class="sidebar-panel" aria-labelledby="members-heading">
+                <div class="section-heading compact-heading">
+                    <div>
+                        <p class="section-kicker">People</p>
+                        <h2 id="members-heading">Members</h2>
+                    </div>
+                </div>
+
+                <div class="member-list">
+                    {% for membership in group.active_members|slice:":6" %}
+                        <article class="member-item">
+                            <span class="member-avatar" aria-hidden="true">{{ membership.user.username|slice:":1"|capfirst }}</span>
+                            <div>
+                                <strong>{{ membership.user.username }}</strong>
+                                <span>{{ membership.role }}</span>
+                            </div>
+                        </article>
+                    {% empty %}
+                        <p class="empty-copy">No active members yet.</p>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="sidebar-panel" aria-labelledby="details-heading">
+                <h2 id="details-heading">Group details</h2>
+                <dl class="group-facts">
+                    <div>
+                        <dt>Visibility</dt>
+                        <dd>{{ group.visibility|capfirst }}</dd>
+                    </div>
+                    <div>
+                        <dt>Topic</dt>
+                        <dd>{{ group.topic|default:"General" }}</dd>
+                    </div>
+                    <div>
+                        <dt>Created</dt>
+                        <dd>{{ group.created_at|date:"F j, Y" }}</dd>
+                    </div>
+                </dl>
+            </section>
+        </aside>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'study_groups/js/group_detail.js' %}"></script>
+{% endblock %}

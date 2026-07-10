@@ -51,7 +51,7 @@
 
     <div class="results-heading">
         <p><strong id="group-result-count">{{ groups.count }}</strong> public groups</p>
-        <button type="button" id="clear-group-filters">Clear filters</button>
+        <a href="{% url 'study_groups:explore' %}" id="clear-group-filters" style="color: #4f46e5">Clear filters</a>
     </div>
     </form>
 
@@ -95,16 +95,18 @@
             <div class="group-card-footer">
                 <span>Created {{ group.created_at|date:'F j' }}</span>
                 <div>
-                    <a href="#" class="view-group-action">View</a>
+                    <a href="{% url 'study_groups:detail' group.id %}" class="view-group-action">View</a>
                     <button type="button" class="join-group-action">Join</button>
                 </div>
             </div>
         </article>
+        {% empty %}
+        <section class="empty-groups-state" id="empty-groups-state">
+            <strong>No groups found</strong>
+            <p>Try changing the search text or clearing the filters.</p>
+            <button type="button" data-clear-filters>Clear filters</button>
+        </section>
         {% endfor %}
     </section>
 
-    <section class="empty-groups-state" id="empty-groups-state" hidden>
-        <strong>No groups found</strong>
-        <p>Try changing the search text or clearing the filters.</p>
-        <button type="button" data-clear-filters>Clear filters</button>
-    </section>
+

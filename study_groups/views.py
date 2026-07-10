@@ -1,9 +1,9 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, Count
 from django.db.models.functions import Lower, Trim
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.urls import reverse, reverse_lazy
-from django.views.generic import ListView, CreateView
+from django.views.generic import ListView, CreateView, DetailView
 
 from goals.views import CreateGoalView
 from study_groups.forms import GroupCreateForm
@@ -127,3 +127,16 @@ class GroupExploreView(ListView):
 
 
 
+class GroupDetailView(DetailView):
+    model = StudyGroup
+    context_object_name = 'group'
+    pk_url_kwarg = 'id'
+    template_name = 'study_groups/group_detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['membership'] = GroupMembership.objects.filter(
+            group=self.object,
+            user=self.request.user
+        ).first()
+        return context
