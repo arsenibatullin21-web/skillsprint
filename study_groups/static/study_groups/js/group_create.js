@@ -80,3 +80,23 @@ avatarInput.addEventListener("change", () => {
 updateNamePreview();
 updateDescriptionPreview();
 updateVisibilityPreview();
+
+const DialogOpen = document.querySelector("#delete-dialog-open");
+const Dialog = document.querySelector("#delete-group-dialog");
+const CloseDialog = document.querySelector("#close-delete-dialog");
+
+if (DialogOpen && Dialog && CloseDialog) {
+    DialogOpen.addEventListener("click", () => {
+        Dialog.showModal();
+    });
+
+    CloseDialog.addEventListener("click", () => {
+        Dialog.close();
+    });
+
+    Dialog.addEventListener("click", (event) => {
+        if (event.target === Dialog) {
+            Dialog.close();
+        }
+    });
+}

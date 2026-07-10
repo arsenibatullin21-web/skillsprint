@@ -211,9 +211,52 @@
             <div class="form-actions">
                 <button type="submit" class="primary-submit">Save changes</button>
                 <a href="{% url 'study_groups:my_groups' %}" class="secondary-cancel">Cancel</a>
+                {% if group.owner == request.user %}
+                    <button type="button" class="danger-delete-action" id="delete-dialog-open">Delete group</button>
+                {% endif %}
             </div>
         </aside>
     </form>
+
+    <dialog
+    id="delete-group-dialog"
+    class="delete-dialog"
+    aria-labelledby="delete-dialog-title"
+>
+    <div class="delete-dialog-content">
+        <div class="delete-dialog-icon" aria-hidden="true">!</div>
+
+        <div>
+            <h2 id="delete-dialog-title">Delete this group?</h2>
+            <p>
+                This will permanently delete the group, its posts,
+                resources, and memberships. This action cannot be undone.
+            </p>
+        </div>
+
+        <div class="delete-dialog-actions">
+            <button
+                type="button"
+                id="close-delete-dialog"
+                class="dialog-cancel"
+            >
+                Cancel
+            </button>
+
+            <form
+                method="post"
+                action="{% url 'study_groups:delete' group.id %}"
+            >
+                {% csrf_token %}
+
+                <button type="submit" class="dialog-delete">
+                    Delete permanently
+                </button>
+            </form>
+        </div>
+    </div>
+</dialog>
+
 </div>
 {% endblock %}
 

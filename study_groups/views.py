@@ -3,7 +3,7 @@ from django.db.models import Q, Count
 from django.db.models.functions import Lower, Trim
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse, reverse_lazy
-from django.views.generic import ListView, CreateView, DetailView, UpdateView
+from django.views.generic import ListView, CreateView, DetailView, UpdateView, DeleteView
 
 from goals.views import CreateGoalView
 from study_groups.forms import GroupCreateForm
@@ -159,3 +159,13 @@ class GroupUpdateView(LoginRequiredMixin, UpdateView):
                 membership__status=GroupMembership.Status.ACTIVE,
             )
         ).distinct()
+
+class GroupDeleteView(DeleteView):
+    model = StudyGroup
+    pk_url_kwarg = 'id'
+    success_url = reverse_lazy('study_groups:my_groups')
+
+    def get_queryset(self):
+        return StudyGroup.objects.filter(
+            Q(owner=self.request.user)
+        )

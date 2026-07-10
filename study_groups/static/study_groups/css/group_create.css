@@ -299,7 +299,8 @@
 }
 
 .primary-submit,
-.secondary-cancel {
+.secondary-cancel,
+.danger-delete-action {
     display: inline-flex;
     min-height: 40px;
     align-items: center;
@@ -331,6 +332,18 @@
 .secondary-cancel:hover {
     border-color: #c8ced6;
     background: var(--color-bg-alt);
+}
+
+.danger-delete-action {
+    border: 1px solid #f1b7b7;
+    background: #fff5f5;
+    color: #b42318;
+}
+
+.danger-delete-action:hover {
+    border-color: #e48b8b;
+    background: #ffecec;
+    color: #991b1b;
 }
 
 .sr-only {
