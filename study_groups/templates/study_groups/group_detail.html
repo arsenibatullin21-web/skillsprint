@@ -93,6 +93,11 @@
                         Joined
                     </button>
                 {% endif %}
+                {% if membership.status == 'active' and membership.role != 'owner' %}
+                    <button type="button" class="danger-leave-action" id="leave-dialog-open">
+                        Leave group
+                    </button>
+                {% endif %}
                 <a href="#" class="secondary-message-action">Message owner</a>
             </div>
 
@@ -296,6 +301,45 @@
         </div>
     </div>
 </dialog>
+
+    <dialog
+        id="leave-group-dialog"
+        class="join-dialog leave-dialog"
+        aria-labelledby="leave-dialog-title"
+    >
+        <div class="join-dialog-content">
+            <div class="join-dialog-icon leave-dialog-icon" aria-hidden="true">!</div>
+
+            <div>
+                <h2 id="leave-dialog-title">Leave this group?</h2>
+                <p>
+                    You will be removed from this group. If you want to join again later,
+                    you may need to send a new request.
+                </p>
+            </div>
+
+            <div class="join-dialog-actions">
+                <button
+                    type="button"
+                    id="close-leave-dialog"
+                    class="dialog-cancel"
+                >
+                    Cancel
+                </button>
+
+                <form
+                    method="post"
+                    action="{% url 'study_groups:leave' group.id %}"
+                >
+                    {% csrf_token %}
+
+                    <button type="submit" class="dialog-confirm dialog-danger">
+                        Leave group
+                    </button>
+                </form>
+            </div>
+        </div>
+    </dialog>
 </div>
 {% endblock %}
 

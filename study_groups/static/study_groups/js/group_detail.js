@@ -17,3 +17,23 @@ if (joinDialogOpen && joinDialog && joinDialogClose) {
         }
     });
 }
+
+const leaveDialogOpen = document.querySelector("#leave-dialog-open");
+const leaveDialog = document.querySelector("#leave-group-dialog");
+const leaveDialogClose = document.querySelector("#close-leave-dialog");
+
+if (leaveDialogOpen && leaveDialog && leaveDialogClose) {
+    leaveDialogOpen.addEventListener("click", () => {
+        leaveDialog.showModal();
+    });
+
+    leaveDialogClose.addEventListener("click", () => {
+        leaveDialog.close();
+    });
+
+    leaveDialog.addEventListener("click", (event) => {
+        if (event.target === leaveDialog) {
+            leaveDialog.close();
+        }
+    });
+}

@@ -216,4 +216,25 @@ class GroupJoinView(LoginRequiredMixin, View):
         return redirect('study_groups:detail', id=group.id)
 
 
+class GroupLeaveView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        group = get_object_or_404(StudyGroup, pk=kwargs['id'])
+
+        if group.owner == request.user:
+            messages.info(request, 'You have to pass your ownership to leave the group')
+            return redirect('study_groups:detail', id=group.id)
+
+        membership = GroupMembership.objects.filter(
+            group=group,
+            user=request.user
+        ).first()
+
+        if membership:
+            membership.delete()
+            messages.success(request, "You left the group")
+            return redirect('study_groups:detail', id=group.id)
+        else:
+            messages.info(request, 'You are not member of the group')
+            return redirect('study_groups:detail', id=group.id)
+
 

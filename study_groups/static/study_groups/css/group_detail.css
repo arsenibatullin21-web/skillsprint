@@ -192,7 +192,8 @@
 
 .primary-join-action,
 .secondary-message-action,
-.manage-action {
+.manage-action,
+.danger-leave-action {
     display: inline-flex;
     min-height: 38px;
     align-items: center;
@@ -230,6 +231,17 @@
 .primary-join-action:disabled {
     cursor: not-allowed;
     opacity: 0.9;
+}
+
+.danger-leave-action {
+    border: 1px solid #fecaca;
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.danger-leave-action:hover {
+    border-color: #dc2626;
+    color: #991b1b;
 }
 
 .secondary-message-action,
@@ -538,6 +550,11 @@
     font-weight: 850;
 }
 
+.leave-dialog-icon {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
 .join-dialog-content h2 {
     overflow-wrap: anywhere;
     font-size: 1rem;
@@ -590,6 +607,16 @@
 .dialog-confirm:hover {
     border-color: var(--color-primary-hover);
     background: var(--color-primary-hover);
+}
+
+.dialog-danger {
+    border-color: #dc2626;
+    background: #dc2626;
+}
+
+.dialog-danger:hover {
+    border-color: #b91c1c;
+    background: #b91c1c;
 }
 
 @media (max-width: 900px) {
