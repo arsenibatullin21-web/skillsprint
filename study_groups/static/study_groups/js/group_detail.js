@@ -1,11 +1,19 @@
-const joinAction = document.querySelector("[data-join-action]");
-const membershipLabel = document.querySelector("[data-membership-label]");
+const joinDialogOpen = document.querySelector("#join-dialog-open");
+const joinDialog = document.querySelector("#join-group-dialog");
+const joinDialogClose = document.querySelector("#close-join-dialog");
 
-if (joinAction && membershipLabel) {
-    joinAction.addEventListener("click", () => {
-        const isJoined = joinAction.classList.toggle("is-joined");
+if (joinDialogOpen && joinDialog && joinDialogClose) {
+    joinDialogOpen.addEventListener("click", () => {
+        joinDialog.showModal();
+    });
 
-        joinAction.textContent = isJoined ? "Joined" : joinAction.dataset.publicLabel;
-        membershipLabel.textContent = isJoined ? "Member" : "Not joined";
+    joinDialogClose.addEventListener("click", () => {
+        joinDialog.close();
+    });
+
+    joinDialog.addEventListener("click", (event) => {
+        if (event.target === joinDialog) {
+            joinDialog.close();
+        }
     });
 }

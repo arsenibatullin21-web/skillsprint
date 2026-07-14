@@ -56,7 +56,11 @@
                 <span class="state-label">Membership</span>
                 <strong data-membership-label>
                     {% if membership %}
-                        {% if membership.role == 'owner' %}
+                        {% if membership.status == 'pending' %}
+                            Request pending
+                        {% elif membership.status == 'rejected' %}
+                            Request rejected
+                        {% elif membership.role == 'owner' %}
                             Owner
                         {% elif membership.role == 'moderator' %}
                             Moderator
@@ -70,9 +74,25 @@
             </div>
 
             <div class="group-action-buttons">
-                <button type="button" class="primary-join-action" data-join-action data-public-label="Join group" data-private-label="Request to join">
-                    Join group
-                </button>
+                {% if not membership or membership.status == 'rejected' %}
+                    <button type="button" class="primary-join-action" id="join-dialog-open">
+                        {% if membership.status == 'rejected' %}
+                            Send request again
+                        {% elif group.visibility == 'private' %}
+                            Request to join
+                        {% else %}
+                            Join group
+                        {% endif %}
+                    </button>
+                {% elif membership.status == 'pending' %}
+                    <button type="button" class="primary-join-action is-pending" disabled>
+                        Request pending
+                    </button>
+                {% else %}
+                    <button type="button" class="primary-join-action is-joined" disabled>
+                        Joined
+                    </button>
+                {% endif %}
                 <a href="#" class="secondary-message-action">Message owner</a>
             </div>
 
@@ -193,6 +213,9 @@
                     {% empty %}
                         <p class="empty-copy">No active members yet.</p>
                     {% endfor %}
+                    {% if group.active_members.count > 6 %}
+                        <a href="" class="secondary-message-action">View all</a>
+                    {% endif %}
                 </div>
             </section>
 
@@ -215,6 +238,64 @@
             </section>
         </aside>
     </div>
+
+    <dialog
+        id="join-group-dialog"
+        class="join-dialog"
+        aria-labelledby="join-dialog-title"
+    >
+    <div class="join-dialog-content">
+        <div class="join-dialog-icon" aria-hidden="true">?</div>
+
+        <div>
+            <h2 id="join-dialog-title">
+                {% if membership.status == 'rejected' %}
+                    Send request again?
+                {% elif group.visibility == 'private' %}
+                    Request to join this group?
+                {% else %}
+                    Join this group?
+                {% endif %}
+            </h2>
+            <p>
+                {% if membership.status == 'rejected' %}
+                    Your previous request was rejected. You can send a new request for the owner or moderator to review.
+                {% elif group.visibility == 'private' %}
+                    The owner or a moderator will review your request before you become a member.
+                {% else %}
+                    You will become an active member and this group will appear in your study groups.
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="join-dialog-actions">
+            <button
+                type="button"
+                id="close-join-dialog"
+                class="dialog-cancel"
+            >
+                Cancel
+            </button>
+
+            <form
+                method="post"
+                action="{% url 'study_groups:join' group.id %}"
+            >
+                {% csrf_token %}
+
+                <button type="submit" class="dialog-confirm">
+                    {% if membership.status == 'rejected' %}
+                        Send again
+                    {% elif group.visibility == 'private' %}
+                        Send request
+                    {% else %}
+                        Join group
+                    {% endif %}
+                </button>
+            </form>
+        </div>
+    </div>
+</dialog>
 </div>
 {% endblock %}
 

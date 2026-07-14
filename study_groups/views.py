@@ -1,10 +1,11 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, Count
 from django.db.models.functions import Lower, Trim
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
+from django.views import View
 from django.views.generic import ListView, CreateView, DetailView, UpdateView, DeleteView
-
+from django.contrib import messages
 from goals.views import CreateGoalView
 from study_groups.forms import GroupCreateForm
 from study_groups.models import StudyGroup, GroupMembership
@@ -135,10 +136,13 @@ class GroupDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['membership'] = GroupMembership.objects.filter(
-            group=self.object,
-            user=self.request.user
-        ).first()
+        membership = None
+        if self.request.user.is_authenticated:
+            membership = GroupMembership.objects.filter(
+                group=self.object,
+                user=self.request.user
+            ).first()
+        context['membership'] = membership
         return context
 
 
@@ -169,3 +173,47 @@ class GroupDeleteView(DeleteView):
         return StudyGroup.objects.filter(
             Q(owner=self.request.user)
         )
+
+class GroupJoinView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        group = get_object_or_404(StudyGroup, pk=kwargs['id'])
+
+        if group.owner == self.request.user:
+            messages.info(request,'You are owner of this group')
+            return redirect('study_groups:detail', id = group.id)
+
+
+        membership, created = GroupMembership.objects.get_or_create(
+            group=group,
+            user=request.user,
+            defaults={
+                'role': GroupMembership.Role.MEMBER,
+                'status': (
+                    GroupMembership.Status.ACTIVE
+                    if group.visibility == StudyGroup.Visibility.PUBLIC
+                    else GroupMembership.Status.PENDING
+                )
+            }
+        )
+
+        if not created:
+            if membership.status == GroupMembership.Status.ACTIVE:
+                messages.info(request, 'You are already in the group')
+            elif membership.status == GroupMembership.Status.PENDING:
+                messages.info(request,'Your request is not accepted yet')
+            elif membership.status == GroupMembership.Status.REJECTED:
+                membership.status = GroupMembership.Status.PENDING
+                membership.save(update_fields=['status'])
+                messages.success(request, 'Your join request was sent again')
+
+            return redirect('study_groups:detail', id=group.id)
+
+        if membership.status == GroupMembership.Status.ACTIVE:
+            messages.success(request, 'You joined the group successfully')
+        elif membership.status == GroupMembership.Status.PENDING:
+            messages.info(request, 'Request to join was sent')
+
+        return redirect('study_groups:detail', id=group.id)
+
+
+

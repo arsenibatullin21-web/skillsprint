@@ -130,6 +130,100 @@ a {
     padding: 40px 0;
 }
 
+/* ===== Django Messages ===== */
+.messages {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 24px;
+}
+
+.message {
+    position: relative;
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 14px 11px 42px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 0.86rem;
+    font-weight: 650;
+    line-height: 1.45;
+    box-shadow: 0 10px 30px rgb(15 23 42 / 6%);
+}
+
+.message::before {
+    position: absolute;
+    left: 14px;
+    display: grid;
+    width: 18px;
+    height: 18px;
+    place-items: center;
+    border-radius: 50%;
+    font-size: 0.72rem;
+    font-weight: 850;
+}
+
+.message.success {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+    color: #166534;
+}
+
+.message.success::before {
+    content: "";
+    background: #16a34a;
+}
+
+.message.success::after {
+    content: "";
+    position: absolute;
+    left: 20px;
+    width: 5px;
+    height: 9px;
+    border-right: 2px solid #fff;
+    border-bottom: 2px solid #fff;
+    transform: rotate(45deg);
+}
+
+.message.info {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.message.info::before {
+    content: "i";
+    background: #2563eb;
+    color: #fff;
+}
+
+.message.warning {
+    border-color: #fde68a;
+    background: #fffbeb;
+    color: #92400e;
+}
+
+.message.warning::before {
+    content: "!";
+    background: #d97706;
+    color: #fff;
+}
+
+.message.error {
+    border-color: #fecaca;
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.message.error::before {
+    content: "!";
+    background: #dc2626;
+    color: #fff;
+}
+
 /* ===== Footer ===== */
 .site-footer {
     border-top: 1px solid var(--color-border);
