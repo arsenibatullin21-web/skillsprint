@@ -11,5 +11,8 @@ urlpatterns = [
     path('edit/<int:id>/', views.GroupUpdateView.as_view(), name='edit'),
     path('delete/<int:id>/', views.GroupDeleteView.as_view(), name='delete'),
     path('<int:id>/join/', views.GroupJoinView.as_view(), name='join'),
-    path('<int:id>/leave/', views.GroupLeaveView.as_view(), name='leave')
+    path('<int:id>/leave/', views.GroupLeaveView.as_view(), name='leave'),
+    path('<int:id>/requests/', views.GroupRequestView.as_view(), name='requests'),
+    path('<int:id>/requests/accept/', views.UserAcceptView.as_view(), name='accept'),
+    path('<int:id>/requests/reject/', views.UserRejectView.as_view(), name='reject')
 ]

@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Join requests - CommunityHub{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'study_groups/css/group_requests.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="requests-page">
+    <nav class="requests-breadcrumbs" aria-label="Breadcrumb">
+        <a href="{% url 'study_groups:detail' group.id %}">
+            <span aria-hidden="true">&larr;</span>
+            Back to group
+        </a>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">Join requests</span>
+    </nav>
+
+    <header class="requests-header">
+        <div>
+            <p class="section-kicker">Private group access</p>
+            <h1>Review join requests</h1>
+            <p>
+                Check who wants to join the group, review their profile summary,
+                and decide whether they should become an active member.
+            </p>
+        </div>
+
+        <aside class="requests-summary" aria-label="Requests summary">
+            <article>
+                <strong data-summary-pending>{{ pending.all.count }}</strong>
+                <span>Pending</span>
+            </article>
+            <article>
+                <strong data-summary-accepted>{{ accepted.all.count }}</strong>
+                <span>Accepted</span>
+            </article>
+            <article>
+                <strong data-summary-rejected>{{ rejected.all.count }}</strong>
+                <span>Rejected</span>
+            </article>
+        </aside>
+    </header>
+
+    <section class="requests-toolbar" aria-label="Request filters">
+        <div class="request-tabs" role="tablist" aria-label="Request status">
+            <button type="button" class="request-tab is-active" data-filter="all">All</button>
+            <button type="button" class="request-tab" data-filter="pending">Pending</button>
+            <button type="button" class="request-tab" data-filter="accepted">Accepted</button>
+            <button type="button" class="request-tab" data-filter="rejected">Rejected</button>
+        </div>
+
+        <label class="request-search">
+            <span class="sr-only">Search requests</span>
+            <input type="search" placeholder="Search by username or note" data-request-search>
+        </label>
+    </section>
+
+    <main class="requests-list" aria-live="polite">
+        {% for member in memberships %}
+        <article class="request-card" data-request-card data-status="{{ member.status}}">
+            <div class="request-person">
+                <span class="request-avatar" aria-hidden="true">{{ member.user.username|slice:'1' }}</span>
+                <div>
+                    <div class="request-name-row">
+                        <h2>{{ member.user.username }}</h2>
+                        <span class="request-status status-{{ member.status }}">{{ member.status|capfirst }}</span>
+                    </div>
+                </div>
+            </div>
+
+            {% if member in accepted.all %}
+                <dl class="request-meta">
+                <div>
+                    <dt>Role</dt>
+                    <dd>{{ member.role|capfirst }}</dd>
+                </div>
+                <div>
+                    <dt>Status</dt>
+                    <dd>{{ member.status|capfirst }}</dd>
+                </div>
+                </dl>
+            {% elif member in pending.all %}
+            <dl class="request-meta">
+                <div>
+                    <dt>Goals</dt>
+                    <dd>{{ member.user.goal.all.count }} active</dd>
+                </div>
+                <div>
+                    <dt>Profile</dt>
+                    <dd>Online</dd>
+                </div>
+            </dl>
+            {% elif member in rejected.all %}
+            <dl class="request-meta">
+                <div>
+                    <dt>Goals</dt>
+                    <dd>{{ member.user.goal.all.count }} active</dd>
+                </div>
+                <div>
+                    <dt>Status</dt>
+                    <dd>{{ member.status|capfirst }}</dd>
+                </div>
+            </dl>
+            {% endif %}
+
+{#            <div class="request-note">#}
+{#                <strong>Message</strong>#}
+{#                <p>I want to join because I am working on Django permissions and group logic.</p>#}
+{#            </div>#}
+
+            {% if member.status == 'pending' %}
+                <div class="request-actions">
+                    <form method="post" action="{% url 'study_groups:reject' group.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="membership_id" value="{{ member.id }}">
+                        <button
+                            type="button"
+                            class="request-action request-reject"
+                            data-dialog-action="reject"
+                            data-user="{{ member.user.username }}"
+                        >
+                            Reject
+                        </button>
+                    </form>
+
+                    <form method="post" action="{% url 'study_groups:accept' group.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="membership_id" value="{{ member.id }}">
+                        <button
+                            type="button"
+                            class="request-action request-accept"
+                            data-dialog-action="accept"
+                            data-user="{{ member.user.username }}"
+                        >
+                            Accept
+                        </button>
+                    </form>
+                </div>
+            {% endif %}
+        </article>
+        {% endfor %}
+
+        <article class="request-card" data-request-card data-status="accepted">
+            <div class="request-person">
+                <span class="request-avatar avatar-green" aria-hidden="true">M</span>
+                <div>
+                    <div class="request-name-row">
+                        <h2>maya</h2>
+                        <span class="request-status status-accepted">Accepted</span>
+                    </div>
+                    <p>Frontend-friendly backend learner focused on clear UI and practical APIs.</p>
+                </div>
+            </div>
+
+            <dl class="request-meta">
+                <div>
+                    <dt>Reviewed</dt>
+                    <dd>July 12, 2026</dd>
+                </div>
+                <div>
+                    <dt>Role</dt>
+                    <dd>member</dd>
+                </div>
+                <div>
+                    <dt>By</dt>
+                    <dd>root</dd>
+                </div>
+            </dl>
+        </article>
+
+        <article class="request-card" data-request-card data-status="rejected">
+            <div class="request-person">
+                <span class="request-avatar avatar-red" aria-hidden="true">K</span>
+                <div>
+                    <div class="request-name-row">
+                        <h2>kanat</h2>
+                        <span class="request-status status-rejected">Rejected</span>
+                    </div>
+                    <p>No profile information yet, and the request message was empty.</p>
+                </div>
+            </div>
+
+            <dl class="request-meta">
+                <div>
+                    <dt>Reviewed</dt>
+                    <dd>July 10, 2026</dd>
+                </div>
+                <div>
+                    <dt>Status</dt>
+                    <dd>rejected</dd>
+                </div>
+                <div>
+                    <dt>By</dt>
+                    <dd>nina</dd>
+                </div>
+            </dl>
+        </article>
+
+        <section class="requests-empty" data-empty-state hidden>
+            <strong>No requests found</strong>
+            <p>Try another status filter or search term.</p>
+        </section>
+    </main>
+
+    <dialog class="request-dialog" id="request-review-dialog" aria-labelledby="request-dialog-title">
+        <div class="request-dialog-content">
+            <span class="request-dialog-icon" data-dialog-icon aria-hidden="true">?</span>
+
+            <div>
+                <h2 id="request-dialog-title" data-dialog-title>Review request</h2>
+                <p data-dialog-copy>
+                    Confirm this action before changing the membership status.
+                </p>
+            </div>
+
+            <div class="request-dialog-actions">
+                <button type="button" class="dialog-cancel" id="request-dialog-cancel">
+                    Cancel
+                </button>
+                <button type="button" class="dialog-confirm" id="request-dialog-confirm">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </dialog>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'study_groups/js/group_requests.js' %}"></script>
+{% endblock %}

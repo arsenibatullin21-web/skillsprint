@@ -238,3 +238,61 @@ class GroupLeaveView(LoginRequiredMixin, View):
             return redirect('study_groups:detail', id=group.id)
 
 
+class GroupRequestView(LoginRequiredMixin, ListView):
+    model = GroupMembership
+    template_name = 'study_groups/group_requests.html'
+    context_object_name = 'memberships'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.group =  get_object_or_404(StudyGroup, pk=kwargs.get('id'))
+        user = request.user
+        membership = GroupMembership.objects.filter(group=self.group, user=user).first()
+
+        if not membership:
+            messages.error(request, 'You are not a member of the group')
+            return redirect('study_groups:detail', id=self.group.id)
+
+        if not (membership.status == GroupMembership.Status.ACTIVE and (self.group.owner == request.user or membership.role == GroupMembership.Role.MODERATOR)):
+            messages.error(request, "You don't have access to this action")
+            return redirect('study_groups:detail', id=self.group.id)
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return GroupMembership.objects.filter(group=self.group, role=GroupMembership.Role.MEMBER)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['pending'] = GroupMembership.objects.filter(group=self.group, status=GroupMembership.Status.PENDING)
+        context['accepted'] = GroupMembership.objects.filter(Q(group=self.group) & Q(status=GroupMembership.Status.ACTIVE) & Q(role=GroupMembership.Role.MEMBER))
+        context['rejected'] = GroupMembership.objects.filter(group=self.group, status=GroupMembership.Status.REJECTED)
+        context['group'] = self.group
+        return context
+
+class UserAcceptView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        group = get_object_or_404(StudyGroup, pk=kwargs.get('id'))
+        membership = get_object_or_404(
+            GroupMembership,
+            pk=request.POST.get('membership_id'),
+            group=group,
+            status=GroupMembership.Status.PENDING,
+        )
+        membership.status = GroupMembership.Status.ACTIVE
+        membership.save(update_fields=['status'])
+        messages.success(request, f'{membership.user.username} accepted successfully')
+        return redirect('study_groups:requests', id=group.id)
+
+class UserRejectView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        group = get_object_or_404(StudyGroup, pk=kwargs.get('id'))
+        membership = get_object_or_404(
+            GroupMembership,
+            pk=request.POST.get('membership_id'),
+            group=group,
+            status=GroupMembership.Status.PENDING,
+        )
+        membership.status = GroupMembership.Status.REJECTED
+        membership.save(update_fields=['status'])
+        messages.success(request, f'{membership.user.username} rejected successfully')
+        return redirect('study_groups:requests', id=group.id)
