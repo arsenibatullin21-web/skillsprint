@@ -14,5 +14,9 @@ urlpatterns = [
     path('<int:id>/leave/', views.GroupLeaveView.as_view(), name='leave'),
     path('<int:id>/requests/', views.GroupRequestView.as_view(), name='requests'),
     path('<int:id>/requests/accept/', views.UserAcceptView.as_view(), name='accept'),
-    path('<int:id>/requests/reject/', views.UserRejectView.as_view(), name='reject')
+    path('<int:id>/requests/reject/', views.UserRejectView.as_view(), name='reject'),
+    path('<int:id>/members/', views.GroupMembersView.as_view(), name='members'),
+    path('<int:group_id>/member/<int:membership_id>/promote/', views.MakeModeratorView.as_view(), name='promote'),
+    path('<int:group_id>/member/<int:membership_id>/remove/', views.RemoveMemberView.as_view(), name='remove_member'),
+    path('<int:group_id>/member/<int:membership_id>/promote/owner/', views.RemoveMemberView.as_view(), name='promote_owner'),
 ]

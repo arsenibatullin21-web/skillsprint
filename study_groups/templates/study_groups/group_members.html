@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Group members - CommunityHub{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'study_groups/css/group_members.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="members-page">
+    <nav class="members-breadcrumbs" aria-label="Breadcrumb">
+        <a href="#">
+            <span aria-hidden="true">&larr;</span>
+            Back to group
+        </a>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">Members</span>
+    </nav>
+
+    <header class="members-header">
+        <div>
+            <p class="section-kicker">Group people</p>
+            <h1>Manage group members</h1>
+            <p>
+                Review active members, moderators, pending requests, and people who were rejected or removed.
+            </p>
+        </div>
+
+        <aside class="members-summary" aria-label="Member summary">
+            <article>
+                <strong>{{ memberships.all.count }}</strong>
+                <span>Active</span>
+            </article>
+            <article>
+                <strong>{{ moderators.all.count }}</strong>
+                <span>Moderators</span>
+            </article>
+            <article>
+                <strong>{{ pending.all.count }}</strong>
+                <span>Pending</span>
+            </article>
+            <article>
+                <strong>{{ rejected.all.count }}</strong>
+                <span>Rejected</span>
+            </article>
+        </aside>
+    </header>
+
+    <section class="members-toolbar" aria-label="Member filters">
+        <div class="member-tabs" role="tablist" aria-label="Filter members">
+            <button type="button" class="member-tab is-active" data-filter="all">All</button>
+            <button type="button" class="member-tab" data-filter="owner">Owner</button>
+            <button type="button" class="member-tab" data-filter="moderator">Moderators</button>
+            <button type="button" class="member-tab" data-filter="member">Members</button>
+            <button type="button" class="member-tab" data-filter="pending">Pending</button>
+        </div>
+
+        <label class="member-search">
+            <span class="sr-only">Search members</span>
+            <input type="search" placeholder="Search by username, role, or location" data-member-search>
+        </label>
+    </section>
+
+    <main class="members-layout">
+        <section class="members-list" aria-live="polite">
+            {% for membership in memberships %}
+                {% with membership.user as member %}
+                    <article class="member-card" data-member-card data-role="{{ membership.role }}" data-status="active">
+                        <div class="member-profile">
+                            <span class="member-avatar avatar-{{ membership.role }}" aria-hidden="true">{{ member.username|slice:'1' }}</span>
+                            <div>
+                                <div class="member-title-row">
+                                    <h2>{{ member.username }}</h2>
+                                    <span class="role-badge role-{{ membership.role }}">{{ membership.role|capfirst }}</span>
+                                    <span class="status-badge status-{{ membership.status }}">Active</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <dl class="member-meta">
+                            <div>
+                                <dt>Joined</dt>
+                                <dd>{{ membership.joined_at|date:'F j, Y' }}</dd>
+                            </div>
+                            <div>
+                                <dt>Posts</dt>
+                                <dd>{{ membership.posts_count }}</dd>
+                            </div>
+                            <div>
+                                <dt>Location</dt>
+                                <dd>{{ member.profile.location }}</dd>
+                            </div>
+                        </dl>
+
+                        {% if request.user == group.owner and membership.role != 'owner'%}
+                        <div class="member-actions">
+                            {% if membership.role == 'moderator' %}
+                                <form method="post" action="{% url 'study_groups:promote_owner' group.id membership.id %}">
+                                    {% csrf_token %}
+                                    <button
+                                        type="button"
+                                        class="member-action primary-action"
+                                        data-member-action="promote_owner"
+                                        data-user="{{ member.username }}"
+                                    >
+                                        Make Owner
+                                    </button>
+                                    </form>
+                            {% else %}
+                                <form method="post" action="{% url 'study_groups:promote' group.id membership.id %}">
+                                    {% csrf_token %}
+                                    <button
+                                        type="button"
+                                        class="member-action primary-action"
+                                        data-member-action="promote"
+                                        data-user="{{ member.username }}"
+                                    >
+                                        Make moderator
+                                    </button>
+                                </form>
+                            {% endif %}
+                            <form method="post" action="{% url 'study_groups:remove_member' group.id membership.id %}">
+                                {% csrf_token %}
+                                <button
+                                    type="button"
+                                    class="member-action danger-action"
+                                    data-member-action="remove"
+                                    data-user="{{ member.username }}"
+                                >
+                                    Remove
+                                </button>
+                            </form>
+                        </div>
+                        {% elif current_member.role == 'moderator' and membership.role != 'owner' and current_member.user != membership.user and membership.role != 'moderator' %}
+                              <div class="member-actions">
+                                   <form method="post" action="{% url 'study_groups:promote' group.id membership.id %}">
+                                    {% csrf_token %}
+                                    <button
+                                        type="button"
+                                        class="member-action primary-action"
+                                        data-member-action="promote"
+                                        data-user="{{ member.username }}"
+                                    >
+                                        Make moderator
+                                    </button>
+                                </form>
+                            <form method="post" action="{% url 'study_groups:remove_member' group.id membership.id %}">
+                                {% csrf_token %}
+                                <button
+                                    type="button"
+                                    class="member-action danger-action"
+                                    data-member-action="remove"
+                                    data-user="{{ member.username }}"
+                                >
+                                    Remove
+                                </button>
+                            </form>
+                              </div>
+                        {% else %}
+                        <div class="member-actions">
+                            {% if current_member.user ==  membership.user %}
+                                <button type="button" class="member-action is-disabled" disabled>You</button>
+                            {% else %}
+                                <button type="button" class="member-action is-disabled" disabled>{{ membership.role|capfirst }}</button>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </article>
+                {% endwith %}
+            {% endfor %}
+
+            <section class="members-empty" data-empty-state hidden>
+                <strong>No members found</strong>
+                <p>Try another role filter or search term.</p>
+            </section>
+        </section>
+
+        <aside class="members-sidebar">
+            <section class="sidebar-panel">
+                <h2>Role rules</h2>
+                <ul class="rules-list">
+                    <li>Owner can edit group, delete group, and manage all roles.</li>
+                    <li>Moderators can review requests and help manage members.</li>
+                    <li>Members can participate but cannot change group settings.</li>
+                </ul>
+            </section>
+
+            <section class="sidebar-panel">
+                <h2>Quick checks</h2>
+                <dl class="checks-list">
+                    <div>
+                        <dt>Owner exists</dt>
+                        <dd>Yes</dd>
+                    </div>
+                    <div>
+                        <dt>Pending requests</dt>
+                        <dd>{{ pending.all.count }}</dd>
+                    </div>
+                    <div>
+                        <dt>Last joined</dt>
+                        <dd>{{ last_joined.joined_at|date:'F j' }}</dd>
+                    </div>
+                </dl>
+            </section>
+        </aside>
+    </main>
+
+    <dialog class="member-dialog" id="member-action-dialog" aria-labelledby="member-dialog-title">
+        <div class="member-dialog-content">
+            <span class="member-dialog-icon" data-dialog-icon aria-hidden="true">?</span>
+
+            <div>
+                <h2 id="member-dialog-title" data-dialog-title>Confirm action</h2>
+                <p data-dialog-copy>
+                    Confirm this member action before changing the group.
+                </p>
+            </div>
+
+            <div class="member-dialog-actions">
+                <button type="button" class="dialog-cancel" id="member-dialog-cancel">Cancel</button>
+                <button type="button" class="dialog-confirm" id="member-dialog-confirm">Confirm</button>
+            </div>
+        </div>
+    </dialog>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'study_groups/js/group_members.js' %}"></script>
+{% endblock %}

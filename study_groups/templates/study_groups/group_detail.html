@@ -93,7 +93,7 @@
                         Joined
                     </button>
                 {% endif %}
-                {% if membership.status == 'active' and membership.role != 'owner' %}
+                {% if membership.status == 'active' %}
                     <button type="button" class="danger-leave-action" id="leave-dialog-open">
                         Leave group
                     </button>
@@ -219,7 +219,9 @@
                         <p class="empty-copy">No active members yet.</p>
                     {% endfor %}
                     {% if group.active_members.count > 6 %}
-                        <a href="" class="secondary-message-action">View all</a>
+                        <a href="{% url 'study_groups:members' group.id %}" class="secondary-message-action">View all</a>
+                    {% else %}
+                        <a href="{% url 'study_groups:members' group.id %}" class="secondary-message-action">See More</a>
                     {% endif %}
                 </div>
             </section>
