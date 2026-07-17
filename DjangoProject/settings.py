@@ -42,6 +42,7 @@ PROJECT_APPS = [
     'user.apps.UserConfig',
     'goals.apps.GoalsConfig',
     'study_groups.apps.StudyGroupsConfig',
+    'community.apps.CommunityConfig',
 ]
 
 THIRD_WAY_APPS = [
