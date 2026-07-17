@@ -1,4 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
 from django.db.models import Q, Count, Case, When, Value, BooleanField
 from django.db.models.functions import Lower, Trim
 from django.shortcuts import render, get_object_or_404, redirect
@@ -310,13 +311,13 @@ class UserRejectView(LoginRequiredMixin, View):
         messages.success(request, f'{membership.user.username} rejected successfully')
         return redirect('study_groups:requests', id=group.id)
 
-class GroupMembersView(ListView):
+class GroupMembersView(LoginRequiredMixin, ListView):
     model = GroupMembership
     context_object_name = 'memberships'
     template_name = 'study_groups/group_members.html'
 
     def get_queryset(self):
-        self.group = StudyGroup.objects.filter(id=self.kwargs.get('id')).first()
+        self.group = get_object_or_404(StudyGroup, pk=self.kwargs.get('id'))
         queryset = GroupMembership.objects.filter(group=self.group, status=GroupMembership.Status.ACTIVE).annotate(
             posts_count=Count('user__posts', filter=Q(user__posts__group=self.group), distinct=True),
             is_moderator=Case(
@@ -329,11 +330,15 @@ class GroupMembersView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['moderators'] = self.get_queryset().filter(role=GroupMembership.Role.MODERATOR)
-        context['rejected'] = self.get_queryset().filter(status=GroupMembership.Status.REJECTED)
-        context['pending'] = self.get_queryset().filter(status=GroupMembership.Status.PENDING)
+        all_memberships = GroupMembership.objects.filter(group=self.group)
+        context['moderators'] = all_memberships.filter(
+            status=GroupMembership.Status.ACTIVE,
+            role=GroupMembership.Role.MODERATOR,
+        )
+        context['rejected'] = all_memberships.filter(status=GroupMembership.Status.REJECTED)
+        context['pending'] = all_memberships.filter(status=GroupMembership.Status.PENDING)
         context['group'] = self.group
-        context['last_joined'] = self.get_queryset().order_by('joined_at').first()
+        context['last_joined'] = self.object_list.order_by('-joined_at').first()
         context['current_member'] = GroupMembership.objects.filter(group=self.group, user=self.request.user).first()
         return context
 
@@ -341,10 +346,21 @@ class MakeModeratorView(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
         group = get_object_or_404(StudyGroup, pk=kwargs.get('group_id'))
         membership = get_object_or_404(GroupMembership, group=group, pk=kwargs.get('membership_id'))
+        current_member = GroupMembership.objects.filter(
+            group=group,
+            user=request.user,
+            status=GroupMembership.Status.ACTIVE,
+        ).first()
 
+        can_manage = group.owner == request.user or (
+            current_member and current_member.role == GroupMembership.Role.MODERATOR
+        )
+        if not can_manage:
+            messages.error(request, "You don't have access to this action")
+            return redirect('study_groups:members', id=group.id)
 
-        if not membership.role == GroupMembership.Role.MEMBER:
-            messages.error(request, 'Member is already a moderator')
+        if membership.status != GroupMembership.Status.ACTIVE or membership.role != GroupMembership.Role.MEMBER:
+            messages.error(request, 'Only active members can become moderators')
             return redirect('study_groups:members', id=group.id)
 
 
@@ -358,7 +374,20 @@ class RemoveMemberView(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
         group = get_object_or_404(StudyGroup, pk=kwargs.get('group_id'))
         membership = get_object_or_404(GroupMembership, group=group, pk=kwargs.get('membership_id'))
+        current_member = GroupMembership.objects.filter(
+            group=group,
+            user=request.user,
+            status=GroupMembership.Status.ACTIVE,
+        ).first()
 
+        can_manage = group.owner == request.user or (
+            current_member
+            and current_member.role == GroupMembership.Role.MODERATOR
+            and membership.role == GroupMembership.Role.MEMBER
+        )
+        if not can_manage:
+            messages.error(request, "You don't have access to this action")
+            return redirect('study_groups:members', id=group.id)
 
         if membership.role == GroupMembership.Role.OWNER or membership.user == group.owner:
             messages.error(request, 'Owner cannot be removed from the group')
@@ -375,17 +404,31 @@ class MakeOwnerView(LoginRequiredMixin, View):
         membership = get_object_or_404(GroupMembership, group=group, pk=kwargs.get('membership_id'))
         membership_owner = GroupMembership.objects.filter(group=group, role=GroupMembership.Role.OWNER).first()
 
-        if membership.role != GroupMembership.Role.MODERATOR:
+        if group.owner != request.user:
+            messages.error(request, "Only the current owner can transfer ownership")
+            return redirect('study_groups:members', id=group.id)
+
+        if membership.status != GroupMembership.Status.ACTIVE or membership.role != GroupMembership.Role.MODERATOR:
             messages.error(request, 'Member is not a moderator')
             return redirect('study_groups:members', id=group.id)
 
+        if not membership_owner:
+            messages.error(request, 'Current owner membership was not found')
+            return redirect('study_groups:members', id=group.id)
 
-        membership.role = GroupMembership.Role.OWNER
-        membership.save(update_fields=['role'])
+        with transaction.atomic():
+            old_owner_username = group.owner.username
 
-        membership_owner.role = GroupMembership.Role.MODERATOR
-        membership_owner.save(update_fields=['role'])
-        messages.success(request, f'{membership.user.username} became the owner')
+            group.owner = membership.user
+            group.save(update_fields=['owner'])
+
+            membership.role = GroupMembership.Role.OWNER
+            membership.save(update_fields=['role'])
+
+            membership_owner.role = GroupMembership.Role.MODERATOR
+            membership_owner.save(update_fields=['role'])
+
+        messages.success(request, f'{membership.user.username} became the owner. {old_owner_username} is now a moderator')
         return redirect('study_groups:members', id=group.id)
 
 

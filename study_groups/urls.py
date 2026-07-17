@@ -19,7 +19,7 @@ urlpatterns = [
     path('<int:id>/members/', views.GroupMembersView.as_view(), name='members'),
     path('<int:group_id>/member/<int:membership_id>/promote/', views.MakeModeratorView.as_view(), name='promote'),
     path('<int:group_id>/member/<int:membership_id>/remove/', views.RemoveMemberView.as_view(), name='remove_member'),
-    path('<int:group_id>/member/<int:membership_id>/promote/owner/', views.RemoveMemberView.as_view(), name='promote_owner'),
+    path('<int:group_id>/member/<int:membership_id>/promote/owner/', views.MakeOwnerView.as_view(), name='promote_owner'),
 
     # drf urls
     path('api/v1/groups/', views.UserGroupListAPIView.as_view(), name='api_my_groups'),
@@ -46,4 +46,5 @@ urlpatterns = [
     path('api/v1/resources/<int:group_id>/create/', views.ResourceCreateUpdateAPIView.as_view(), name='api_resource_create'),
     path('api/v1/resources/<int:group_id>/update/<int:pk>/', views.ResourceCreateUpdateAPIView.as_view(), name='api_resource_update'),
     path('api/v1/resources/<int:group_id>/destroy/<int:pk>/', views.ResourceCreateUpdateAPIView.as_view(), name='api_resource_destroy'),
+
 ]
