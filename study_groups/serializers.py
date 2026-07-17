@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
-from study_groups.models import StudyGroup, GroupMembership, GroupPost
+from study_groups.models import StudyGroup, GroupMembership, GroupPost, GroupResource
 
 
 class UserGroupsSerializer(serializers.ModelSerializer):
@@ -139,5 +139,29 @@ class PostCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = GroupPost
         fields = ['group','author','title', 'content']
+
+class ResourceDetailListSerializer(serializers.ModelSerializer):
+    '''To see all resources of the group and detail of one resource'''
+    group = serializers.SlugRelatedField('name', read_only=True)
+    class Meta:
+        model = GroupResource
+        fields = ['id','group', 'title', 'url', 'description', 'created_by', 'created_at']
+
+class ResourceCreateSerializer(serializers.ModelSerializer):
+    group = serializers.SlugRelatedField('name', read_only=True)
+    created_at = serializers.ReadOnlyField()
+    class Meta:
+        model = GroupResource
+        fields = ['group','title', 'url', 'description', 'created_by', 'created_at']
+
+class ResourceUpdateSerializer(serializers.ModelSerializer):
+    group = serializers.SlugRelatedField('name', read_only=True)
+    class Meta:
+        model = GroupResource
+        fields = ['group','title', 'url', 'description', 'created_by', 'created_at']
+        read_only_fields = ['created_by', 'created_at']
+
+
+
 
 

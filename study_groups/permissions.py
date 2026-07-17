@@ -1,7 +1,10 @@
+from tokenize import group
+
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
 from rest_framework import permissions
 
-from study_groups.models import GroupMembership
+from study_groups.models import GroupMembership, StudyGroup
 
 
 class IsOwnerOrModeratorGroup(permissions.BasePermission):
@@ -63,3 +66,36 @@ class IsAuthorOrOwnerOrModerator(permissions.BasePermission):
             )
 
         return False
+
+class IsActiveMember(permissions.BasePermission):
+    def has_permission(self, request, view):
+        group = get_object_or_404(
+            StudyGroup,
+            pk=view.kwargs.get('group_id')
+        )
+
+        return (GroupMembership.objects.filter(
+            Q(group__owner=request.user) |
+            Q(
+                user=request.user,
+                status=GroupMembership.Status.ACTIVE,
+                group=group
+            )
+        ).exists())
+
+class IsModeratorOrOwner(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if isinstance(obj, StudyGroup):
+            group = obj
+        else:
+            group = obj.group
+
+        return GroupMembership.objects.filter(
+            Q(group__owner=request.user, group=group) |
+            Q(
+                user=request.user,
+                group=group,
+                status=GroupMembership.Status.ACTIVE,
+                role=GroupMembership.Role.MODERATOR
+              )
+        ).exists()

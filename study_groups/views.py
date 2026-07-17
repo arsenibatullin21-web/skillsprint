@@ -2,6 +2,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, Count, Case, When, Value, BooleanField
 from django.db.models.functions import Lower, Trim
 from django.shortcuts import render, get_object_or_404, redirect
+from django.template.context_processors import request
 from django.urls import reverse, reverse_lazy
 from django.utils.text import slugify
 from django.views import View
@@ -12,13 +13,15 @@ from rest_framework.response import Response
 
 from goals.views import CreateGoalView
 from study_groups.forms import GroupCreateForm
-from study_groups.models import StudyGroup, GroupMembership, GroupPost
+from study_groups.models import StudyGroup, GroupMembership, GroupPost, GroupResource
 from rest_framework import generics, permissions, mixins, status
 
-from study_groups.permissions import IsOwnerOrModeratorGroup, IsOwnerOrModeratorMembership, IsAuthorOrOwnerOrModerator
+from study_groups.permissions import IsOwnerOrModeratorGroup, IsOwnerOrModeratorMembership, IsAuthorOrOwnerOrModerator, \
+    IsActiveMember, IsModeratorOrOwner
 from study_groups.serializers import GroupDetailSerializer, UserGroupsSerializer, ExploreGroupsSerializer, \
     GroupCreateUpdateSerializer, MembershipSerializer, MembershipCreateSerializer, MembershipUpdateSerializer, \
-    PostListDetailSerializer, PostCreateUpdateSerializer
+    PostListDetailSerializer, PostCreateUpdateSerializer, ResourceDetailListSerializer, ResourceCreateSerializer, \
+    ResourceUpdateSerializer
 
 
 # Create your views here.
@@ -504,6 +507,78 @@ class PostCreateUpdateAPIView(mixins.CreateModelMixin, mixins.UpdateModelMixin, 
                 'You must be an active member to create posts.'
             )
         serializer.save(group=group, author=self.request.user)
+
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
+
+
+class ResourceListDetailAPIView(mixins.ListModelMixin, mixins.RetrieveModelMixin, generics.GenericAPIView):
+    serializer_class = ResourceDetailListSerializer
+    permission_classes = [permissions.IsAuthenticated, ]
+
+    def get_queryset(self):
+        group = get_object_or_404(StudyGroup, pk=self.kwargs.get('group_id'))
+        queryset = GroupResource.objects.filter(group=group)
+
+        if group.visibility == StudyGroup.Visibility.PRIVATE:
+            is_member = GroupMembership.objects.filter(Q(
+                group=group,
+                user=self.request.user,
+                status=GroupMembership.Status.ACTIVE) |
+                Q(group__owner=self.request.user)
+            ).exists()
+
+            if not is_member:
+                raise PermissionDenied(
+                    "You don't have access to this group's resources."
+                )
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        if 'pk' in kwargs:
+            return self.retrieve(request, *args, **kwargs)
+        return self.list(request, *args, **kwargs)
+
+
+class ResourceCreateUpdateAPIView(mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin,generics.GenericAPIView):
+    serializer_class = ResourceCreateSerializer
+
+
+    def get_queryset(self):
+        queryset = GroupResource.objects.filter(
+            Q(group__owner=self.request.user) |
+            Q(
+                group__membership__user=self.request.user,
+                group__membership__status=GroupMembership.Status.ACTIVE,
+                group__membership__role=GroupMembership.Role.MODERATOR
+            )
+        )
+        return queryset
+
+    def perform_create(self, serializer):
+        group = get_object_or_404(StudyGroup, pk=self.kwargs.get('group_id'))
+        serializer.save(group=group)
+
+    def get_serializer_class(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return ResourceUpdateSerializer
+        return ResourceCreateSerializer
+
+    def get_permissions(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return [permissions.IsAuthenticated(), IsModeratorOrOwner()]
+        return [permissions.IsAuthenticated(), IsActiveMember()]
+
 
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
