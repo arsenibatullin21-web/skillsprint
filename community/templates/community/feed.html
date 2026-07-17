@@ -18,7 +18,7 @@
             </p>
         </div>
 
-        <a href="#" class="feed-create-link">New post</a>
+        <a href="{% url 'community:post_create' group.id %}" class="feed-create-link">New post</a>
     </header>
 
     <section class="feed-toolbar" aria-label="Feed controls">

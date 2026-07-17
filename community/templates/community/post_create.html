@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Create post - CommunityHub{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'community/css/post_create.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="post-create-page">
+    <nav class="post-create-breadcrumbs" aria-label="Breadcrumb">
+        <a href="{% url 'community:feed' group.id %}">
+            <span aria-hidden="true">&larr;</span>
+            Back to group feed
+        </a>
+    </nav>
+
+    <header class="post-create-header">
+        <div>
+            <p class="post-create-kicker">Group post</p>
+            <h1>Create a post</h1>
+            <p>
+                Share an update, question, resource, or study note with members of this group.
+            </p>
+        </div>
+    </header>
+
+    <div class="post-create-layout">
+        <main class="post-create-main">
+            <form class="post-form" action="#" method="post">
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                    <p>{{ form.non_field_errors.l0 }}</p>
+                {% endif %}
+
+                <section class="post-form-section" aria-labelledby="post-content-heading">
+                    <div class="post-form-heading">
+                        <div>
+                            <p class="post-create-kicker">Content</p>
+                            <h2 id="post-content-heading">Post details</h2>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="post-title">Title</label>
+                        <input
+                            type="text"
+                            id="post-title"
+                            name="{{ form.title.html_name }}"
+                            value="{{ form.title.value|default_if_none:'' }}"
+                            placeholder="Example: Best way to practice Django permissions?"
+                            maxlength="80"
+                        >
+                        {% if form.title.errors %}
+                            <p>{{ form.title.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="post-content">Content</label>
+                        <textarea
+                            id="post-content"
+                            name="{{ form.content.html_name }}"
+                            rows="10"
+                            placeholder="Write your post here..."
+                        >{{ form.content.value|default_if_none:'' }}</textarea>
+                            {% if form.content.errors %}
+                            <p>{{ form.content.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </section>
+
+                <section class="post-form-section" aria-labelledby="post-preview-heading">
+                    <div class="post-form-heading">
+                        <div>
+                            <p class="post-create-kicker">Preview</p>
+                            <h2 id="post-preview-heading">How it will appear</h2>
+                        </div>
+                    </div>
+
+                    <article class="post-preview-card">
+                        <div class="post-preview-topline">
+                            <span class="group-avatar" aria-hidden="true">D</span>
+                            <div>
+                                <strong>Django Study Group</strong>
+                                <span>Public group</span>
+                            </div>
+                        </div>
+
+                        <h3>Best way to practice Django permissions?</h3>
+                        <p>
+                            I am working on group-only pages and want to understand how to check active membership
+                            before showing private content.
+                        </p>
+
+                        <footer>
+                            <span>By arsen</span>
+                            <span>Just now</span>
+                        </footer>
+                    </article>
+                </section>
+
+                <div class="post-form-actions">
+                    <a href="#" class="post-cancel-link">Cancel</a>
+                    <button type="submit" class="post-submit-button">Publish post</button>
+                </div>
+            </form>
+        </main>
+
+        <aside class="post-create-sidebar">
+            <section class="post-help-panel">
+                <h2>Posting rules</h2>
+                <ul>
+                    <li>Only active group members should create posts.</li>
+                    <li>Keep questions clear and connected to the group topic.</li>
+                    <li>Moderators can remove content that breaks group rules.</li>
+                </ul>
+            </section>
+
+            <section class="post-help-panel">
+                <h2>Good post ideas</h2>
+                <ul>
+                    <li>Ask for help with a specific problem.</li>
+                    <li>Share a useful resource or learning note.</li>
+                    <li>Post progress updates for group accountability.</li>
+                </ul>
+            </section>
+        </aside>
+    </div>
+</div>
+{% endblock %}
