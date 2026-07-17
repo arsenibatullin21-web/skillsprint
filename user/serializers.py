@@ -3,6 +3,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.db import transaction
 from rest_framework import serializers
 
+from study_groups.models import StudyGroup, GroupMembership
 from user.models import Profile
 
 
