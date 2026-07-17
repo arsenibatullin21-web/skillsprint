@@ -94,6 +94,9 @@
                     </button>
                 {% endif %}
                 {% if membership.status == 'active' %}
+                    <a href="{% url 'community:feed' group.id %}" class="secondary-message-action">
+                        View group feed
+                    </a>
                     <button type="button" class="danger-leave-action" id="leave-dialog-open">
                         Leave group
                     </button>
@@ -148,8 +151,8 @@
                         <p class="section-kicker">Activity</p>
                         <h2 id="posts-heading">Recent posts</h2>
                     </div>
-                    {% if membership.role == 'owner' or membership.role == 'moderator' %}
-                        <a href="#" class="section-link">New post</a>
+                    {% if membership.status == 'active' %}
+                        <a href="{% url 'community:feed' group.id %}" class="section-link">View all posts</a>
                     {% endif %}
                 </div>
 

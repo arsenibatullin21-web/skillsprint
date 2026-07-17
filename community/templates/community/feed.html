@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ group.name }} posts - CommunityHub{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'community/css/feed.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="feed-page" data-current-user-id="{{ request.user.id|default:'' }}">
+    <header class="feed-header">
+        <div>
+            <p class="feed-kicker">Group posts</p>
+            <h1>{{ group.name }}</h1>
+            <p class="feed-intro">
+                Posts published inside this study group.
+            </p>
+        </div>
+
+        <a href="#" class="feed-create-link">New post</a>
+    </header>
+
+    <section class="feed-toolbar" aria-label="Feed controls">
+        <label class="feed-search">
+            <span class="sr-only">Search posts</span>
+            <input type="search" data-feed-search placeholder="Search posts in this group">
+        </label>
+
+        <div class="feed-tabs" aria-label="Post filters">
+            <button type="button" class="feed-tab is-active" data-feed-filter="all">All posts</button>
+            <button type="button" class="feed-tab" data-feed-filter="mine">My posts</button>
+        </div>
+    </section>
+
+    <div class="feed-layout">
+        <main class="feed-main" aria-label="Posts">
+            <div class="feed-list" data-feed-list>
+                {% for post in posts %}
+                    <article
+                        class="feed-post"
+                        data-feed-post
+                        data-author-id="{{ post.author_id }}"
+                    >
+                        <div class="feed-post-topline">
+                            <a href="#" class="feed-group">
+                                {% if group.avatar %}
+                                    <img src="{{ group.avatar.url }}" alt="{{ group.name }}">
+                                {% else %}
+                                    <span aria-hidden="true">{{ post.author.username|slice:":1"|capfirst }}</span>
+                                {% endif %}
+                                <span>{{ group.name }}</span>
+                            </a>
+
+
+                        </div>
+
+                        <h2>
+                            <a href="#">{{ post.title }}</a>
+                        </h2>
+
+                        <p class="feed-post-content">
+                            {{ post.content|truncatewords:42 }}
+                        </p>
+
+                        <footer class="feed-post-footer">
+                            <span>By {{ post.author.username }}</span>
+                            <time datetime="{{ post.created_at|date:'Y-m-d' }}">
+                                {{ post.created_at|timesince }} ago
+                            </time>
+                        </footer>
+
+                        <div class="feed-actions" aria-label="Post actions">
+                            <button type="button" data-reaction-button>Like</button>
+                            <button type="button" data-reaction-button>Helpful</button>
+                            <button type="button" data-bookmark-button>Bookmark</button>
+                        </div>
+                    </article>
+                {% empty %}
+                    <section class="feed-empty" data-feed-empty>
+                        <h2>No posts yet</h2>
+                        <p>
+                            When members publish posts in this group, they will appear here.
+                        </p>
+                    </section>
+                {% endfor %}
+            </div>
+
+            <section class="feed-empty is-hidden" data-feed-no-results>
+                <h2>No matching posts</h2>
+                <p>Try another search term.</p>
+            </section>
+        </main>
+
+        <aside class="feed-sidebar" aria-label="Feed summary">
+            <section class="feed-panel">
+                <h2>Access rule</h2>
+                <ul class="feed-rule-list">
+                    <li>Private group posts are visible only to active members.</li>
+                    <li>Public group posts can be visible for discovery.</li>
+                    <li>Only active members should create posts and comments.</li>
+                </ul>
+            </section>
+
+            <section class="feed-panel">
+                <h2>Group info</h2>
+                <dl class="feed-group-info">
+                    <div>
+                        <dt>Visibility</dt>
+                        <dd>{{ group.visibility|capfirst }}</dd>
+                    </div>
+                    <div>
+                        <dt>Topic</dt>
+                        <dd>{{ group.topic|default:"General" }}</dd>
+                    </div>
+                    <div>
+                        <dt>Posts</dt>
+                        <dd>{{ group.posts.count }}</dd>
+                    </div>
+                </dl>
+            </section>
+        </aside>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'community/js/feed.js' %}"></script>
+{% endblock %}
