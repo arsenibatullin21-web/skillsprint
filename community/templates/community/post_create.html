@@ -19,9 +19,19 @@
     <header class="post-create-header">
         <div>
             <p class="post-create-kicker">Group post</p>
-            <h1>Create a post</h1>
+            <h1>
+                {% if not is_update %}
+                    Create a post
+                {% else %}
+                    Update post
+                {% endif %}
+            </h1>
             <p>
+                {% if not is_update %}
                 Share an update, question, resource, or study note with members of this group.
+                {% else %}
+                    Change important moments of the post.
+                {% endif %}
             </p>
         </div>
     </header>
@@ -31,7 +41,7 @@
             <form class="post-form" action="#" method="post">
                 {% csrf_token %}
                 {% if form.non_field_errors %}
-                    <p>{{ form.non_field_errors.l0 }}</p>
+                    <p>{{ form.non_field_errors.0 }}</p>
                 {% endif %}
 
                 <section class="post-form-section" aria-labelledby="post-content-heading">
@@ -102,8 +112,14 @@
                 </section>
 
                 <div class="post-form-actions">
-                    <a href="#" class="post-cancel-link">Cancel</a>
-                    <button type="submit" class="post-submit-button">Publish post</button>
+                    <a href="{% if is_update %}{% url 'community:post_detail' post.id %}{% else %}{% url 'community:feed' group.id %}{% endif %}" class="post-cancel-link">Cancel</a>
+                    <button type="submit" class="post-submit-button">
+                        {% if not is_update %}
+                            Publish post
+                        {% else %}
+                            Update post
+                        {% endif %}
+                    </button>
                 </div>
             </form>
         </main>

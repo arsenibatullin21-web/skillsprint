@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ post.title|default:"Post detail" }} - CommunityHub{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'community/css/post_detail.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="post-detail-page">
+    <nav class="post-detail-breadcrumbs" aria-label="Breadcrumb">
+        <a href="{% url 'community:feed' post.group.id %}">
+            <span aria-hidden="true">&larr;</span>
+            Back to group feed
+        </a>
+    </nav>
+
+    <header class="post-detail-header">
+        <div class="post-detail-heading">
+            <p class="post-detail-kicker">Group post</p>
+            <h1>{{ post.title|default:"How to organize Django permissions?" }}</h1>
+
+            <div class="post-meta">
+                <a href="#" class="post-group-link">
+                    {% if post.group.avatar %}
+                        <img src="{{ post.group.avatar.url }}" alt="{{ post.group.name }}">
+                    {% else %}
+                        <span aria-hidden="true">{{ post.group.name|default:"Group"|slice:":1"|capfirst }}</span>
+                    {% endif %}
+                    <strong>{{ post.group.name|default:"Django Study Group" }}</strong>
+                </a>
+
+                <span>By {{ post.author.username|default:"author" }}</span>
+                <time datetime="{{ post.created_at|date:'Y-m-d' }}">
+                    {{ post.created_at|timesince|default:"just now" }} ago
+                </time>
+            </div>
+        </div>
+
+        <div class="post-manage-actions" aria-label="Post management">
+            {% if request.user == post.author %}
+                <a href="{% url 'community:post_update' post.id %}" class="post-action-link">Edit</a>
+                <button type="button" class="post-action-button post-action-danger" data-open-delete-dialog>
+                    Delete
+                </button>
+            {% elif can_manage_post %}
+                <button type="submit" class="post-action-button post-action-danger" data-open-delete-dialog>
+                    Delete
+                </button>
+            {% endif %}
+        </div>
+    </header>
+
+    <div class="post-detail-layout">
+        <main class="post-detail-main">
+            <article class="post-content-card">
+                <div class="post-content">
+                    {{ post.content|default:"Write the full post content here. This area is for the real discussion, question, resource, or learning note from a group member."|linebreaks }}
+                </div>
+
+                {% if post.updated_at and post.updated_at != post.created_at %}
+                    <p class="post-updated">
+                        Updated {{ post.updated_at|timesince }} ago
+                    </p>
+                {% endif %}
+            </article>
+
+            <section class="post-social-card" aria-label="Post actions">
+                <form class="reaction-list" action="{% url 'community:reaction_create' post.id %}" method="post" data-reaction-form>
+                    {% csrf_token %}
+                    <input type="hidden" name="remove" value="0" data-reaction-remove>
+                    {% if reaction_form.non_field_errors %}
+                        <p>{{ reaction_form.non_field_errors.0 }}</p>
+                    {% endif %}
+                    <label class="reaction-button {% if user_reaction == 'like' %}is-active{% endif %}" data-reaction-option>
+                        <input
+                            type="radio"
+                            name="type"
+                            value="like"
+                            {% if user_reaction == 'like' %}checked{% endif %}
+                        >
+                        Like
+                        <span data-reaction-count>{{ like_count|default:"0" }}</span>
+                    </label>
+
+                    <label class="reaction-button {% if user_reaction == 'helpful' %}is-active{% endif %}" data-reaction-option>
+                        <input
+                            type="radio"
+                            name="type"
+                            value="helpful"
+                            {% if user_reaction == 'helpful' %}checked{% endif %}
+                        >
+                        Helpful
+                        <span data-reaction-count>{{ helpful_count|default:"0" }}</span>
+                    </label>
+
+                    <label class="reaction-button {% if user_reaction == 'celebrate' %}is-active{% endif %}" data-reaction-option>
+                        <input
+                            type="radio"
+                            name="type"
+                            value="celebrate"
+                            {% if user_reaction == 'celebrate' %}checked{% endif %}
+                        >
+                        Celebrate
+                        <span data-reaction-count>{{ celebrate_count|default:"0" }}</span>
+                    </label>
+                </form>
+
+                <form action="{% url 'community:bookmark_create' post.id %}" method="post" data-bookmark-form>
+                    {% csrf_token %}
+                    <input type="hidden" name="remove" value="0" data-bookmark-remove>
+                    <label class="bookmark-button {% if is_bookmarked %}is-active{% endif %}" data-bookmark-button>
+                        <input
+                            type="checkbox"
+                            name="bookmark"
+                            value="1"
+                            {% if is_bookmarked %}checked{% endif %}
+                            data-bookmark-input
+                        >
+                        <span data-bookmark-label>
+                            {% if is_bookmarked %}Saved{% else %}Bookmark{% endif %}
+                        </span>
+                    </label>
+                </form>
+            </section>
+
+            <section class="comments-section" aria-labelledby="comments-heading">
+                <div class="comments-heading">
+                    <div>
+                        <p class="post-detail-kicker">Discussion</p>
+                        <h2 id="comments-heading">Comments</h2>
+                    </div>
+                    <span>{{ comments_count|default:"0" }} total</span>
+                </div>
+
+                <form class="comment-form" action="{% url 'community:comment_create' post.id %}" method="post">
+                    {% csrf_token %}
+                    {% if comment_form.non_field_errors %}
+                        <p>{{ comment_form.non_field_errors.0 }}</p>
+                    {% endif %}
+                    <label for="comment-context">Add a comment</label>
+                    <textarea
+                        id="comment-context"
+                        name="{{ comment_form.context.html_name }}"
+                        rows="4"
+                        placeholder="Write your reply..."
+                    >{{ comment_form.context.value|default_if_none:'' }}</textarea>
+                    {% if comment_form.context.errors %}
+                        <p>{{ comment_form.context.errors.0 }}</p>
+                    {% endif %}
+                    <div class="comment-form-actions">
+                        <button type="submit">Publish comment</button>
+                    </div>
+                </form>
+
+                <div class="comment-list">
+                    {% for comment in comments %}
+                        <article class="comment-item">
+                            <header class="comment-header">
+                                <div class="comment-author">
+                                    <span aria-hidden="true">{{ comment.author.username|slice:":1"|capfirst }}</span>
+                                    <div>
+                                        <strong>{{ comment.author.username }}</strong>
+                                        <time datetime="{{ comment.created_at|date:'Y-m-d' }}">
+                                            {{ comment.created_at|timesince }} ago
+                                        </time>
+                                    </div>
+                                </div>
+
+                                {% if request.user == comment.author or can_manage_post %}
+                                    <button type="button" class="comment-menu-button">Manage</button>
+                                {% endif %}
+                            </header>
+
+                            <p>{{ comment.context }}</p>
+
+                            <button type="button" class="comment-reply-button" data-reply-toggle>
+                                Reply
+                            </button>
+
+                            <form class="reply-form is-hidden" action="{% url 'community:comment_create' post.id %}" method="post" data-reply-form>
+                                {% csrf_token %}
+                                {% if comment_form.non_field_errors %}
+                                    <p>{{ comment_form.non_field_errors.0 }}</p>
+                                {% endif %}
+                                <input type="hidden" name="parent" value="{{ comment.id }}">
+                                <label for="reply-{{ comment.id }}" class="sr-only">Reply to {{ comment.author.username }}</label>
+                                <textarea
+                                    id="reply-{{ comment.id }}"
+                                    name="{{ comment_form.context.html_name }}"
+                                    rows="3"
+                                    placeholder="Write a reply..."
+                                >{{ comment_form.context.value|default_if_none:'' }}</textarea>
+                                {% if comment_form.context.errors %}
+                                    <p>{{ comment_form.context.errors.0 }}</p>
+                                {% endif %}
+                                <button type="submit">Send reply</button>
+                            </form>
+
+                            {% if comment.replies.all %}
+                                <div class="reply-list">
+                                    {% for reply in comment.replies.all %}
+                                        <article class="comment-item comment-reply">
+                                            <header class="comment-header">
+                                                <div class="comment-author">
+                                                    <span aria-hidden="true">{{ reply.author.username|slice:":1"|capfirst }}</span>
+                                                    <div>
+                                                        <strong>{{ reply.author.username }}</strong>
+                                                        <time datetime="{{ reply.created_at|date:'Y-m-d' }}">
+                                                            {{ reply.created_at|timesince }} ago
+                                                        </time>
+                                                    </div>
+                                                </div>
+                                            </header>
+                                            <p>{{ reply.context }}</p>
+                                        </article>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </article>
+                    {% empty %}
+                        <section class="comments-empty">
+                            <h2>No comments yet</h2>
+                            <p>Be the first member to continue this discussion.</p>
+                        </section>
+                    {% endfor %}
+                </div>
+            </section>
+        </main>
+
+        <aside class="post-detail-sidebar" aria-label="Post summary">
+            <section class="post-side-panel">
+                <h2>Post summary</h2>
+                <dl class="post-summary-list">
+                    <div>
+                        <dt>Author</dt>
+                        <dd>{{ post.author.username|default:"author" }}</dd>
+                    </div>
+                    <div>
+                        <dt>Group</dt>
+                        <dd>{{ post.group.name|default:"Group" }}</dd>
+                    </div>
+                    <div>
+                        <dt>Reactions</dt>
+                        <dd>{{ reactions_count|default:"0" }}</dd>
+                    </div>
+                    <div>
+                        <dt>Bookmarks</dt>
+                        <dd>{{ bookmarks_count|default:"0" }}</dd>
+                    </div>
+                </dl>
+            </section>
+
+            <section class="post-side-panel">
+                <h2>Group rules</h2>
+                <p>
+                    {{ post.group.rules|default:"Keep the discussion useful, respectful, and connected to the study group topic." }}
+                </p>
+            </section>
+        </aside>
+    </div>
+
+    <dialog class="delete-post-dialog" data-delete-dialog>
+        <form method="post" class="delete-post-modal" action="{% url 'community:post_delete' post.id %}">
+            {% csrf_token %}
+            <p class="post-detail-kicker">Delete post</p>
+            <h2>Are you sure?</h2>
+            <p>
+                This action should remove the post and its discussion from the group feed.
+            </p>
+            <div class="delete-dialog-actions">
+                <button type="button" class="post-action-button" data-close-delete-dialog>Cancel</button>
+                <button type="submit" class="post-action-link post-action-danger-link">Delete post</button>
+            </div>
+        </form>
+    </dialog>
+{% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+            <p class="message message-{{ message.tags }}">{{ message }}</p>
+        {% endfor %}
+    </div>
+{% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'community/js/post_detail.js' %}"></script>
+{% endblock %}
