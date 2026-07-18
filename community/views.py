@@ -1,5 +1,6 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
+from django.db.models import Count
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views import View
 from django.views.generic import ListView, CreateView, DetailView, DeleteView, UpdateView
@@ -321,3 +322,31 @@ class CommentUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_success_url(self):
         return reverse('community:post_detail', kwargs={'post_id': self.post_object.id})
+
+class BookmarkedPostsListView(LoginRequiredMixin, ListView):
+    model = Bookmark
+    template_name = 'community/bookmarked_posts.html'
+    context_object_name = 'bookmarks'
+
+
+    def get_queryset(self):
+        return Bookmark.objects.filter(
+                    user=self.request.user
+                ).select_related(
+                    'post',
+                    'post__group',
+                    'post__author',
+                )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['latest_bookmark'] = self.get_queryset().order_by('created_at').first()
+
+        bookmarked_groups_count = Bookmark.objects.filter(
+            user=self.request.user
+        ).aggregate(
+            count=Count('post__group', distinct=True)
+        )['count']
+        context['bookmarked_groups_count'] = bookmarked_groups_count
+        return context
+

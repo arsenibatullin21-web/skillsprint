@@ -14,5 +14,5 @@ urlpatterns = [
     path('posts/<int:post_id>/bookmark/create/', views.BookmarkCreateDeleteView.as_view(), name='bookmark_create'),
     path('posts/<int:post_id>/comments/<int:comment_id>/update/', views.CommentUpdateView.as_view(), name='comment_update'),
     path('posts/<int:post_id>/comments/<int:comment_id>/delete/', views.CommentDeleteView.as_view(), name='comment_delete'),
-
+    path('posts/bookmarked/', views.BookmarkedPostsListView.as_view(), name='posts_bookmarked')
 ]

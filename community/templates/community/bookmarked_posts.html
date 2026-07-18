@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Bookmarked posts - CommunityHub{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'community/css/bookmarked_posts.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="bookmarks-page">
+    <header class="bookmarks-header">
+        <div>
+            <p class="bookmarks-kicker">Saved reading</p>
+            <h1>Bookmarked posts</h1>
+            <p class="bookmarks-intro">
+                Posts you saved from your study groups for later review.
+            </p>
+        </div>
+
+        <a href="{% url 'study_groups:explore' %}" class="bookmarks-primary-link">Explore groups</a>
+    </header>
+
+    <section class="bookmarks-toolbar" aria-label="Bookmark controls">
+        <label class="bookmarks-search">
+            <span class="sr-only">Search bookmarked posts</span>
+            <input type="search" data-bookmark-search placeholder="Search by title, content, group, or author">
+        </label>
+
+        <div class="bookmarks-tabs" aria-label="Bookmark filters">
+            <button type="button" class="bookmarks-tab is-active" data-bookmark-filter="all">All</button>
+            <button type="button" class="bookmarks-tab" data-bookmark-filter="recent">Recent</button>
+        </div>
+    </section>
+
+    <div class="bookmarks-layout">
+        <main class="bookmarks-main" aria-label="Bookmarked posts">
+            <div class="bookmarks-list" data-bookmark-list>
+                {% for bookmark in bookmarks %}
+                    <article
+                        class="bookmark-card"
+                        data-bookmark-card
+                        data-bookmark-text="{{ bookmark.post.title }} {{ bookmark.post.content }} {{ bookmark.post.group.name }} {{ bookmark.post.author.username }}"
+                    >
+                        <div class="bookmark-card-topline">
+                            <a href="{% url 'study_groups:detail' bookmark.post.group.id %}" class="bookmark-group">
+                                {% if bookmark.post.group.avatar %}
+                                    <img src="{{ bookmark.post.group.avatar.url }}" alt="{{ bookmark.post.group.name }}">
+                                {% else %}
+                                    <span aria-hidden="true">{{ bookmark.post.group.name|slice:":1"|capfirst }}</span>
+                                {% endif %}
+                                <span>{{ bookmark.post.group.name }}</span>
+                            </a>
+
+                            <time datetime="{{ bookmark.created_at|date:'Y-m-d' }}">
+                                Saved {{ bookmark.created_at|timesince }} ago
+                            </time>
+                        </div>
+
+                        <h2>
+                            <a href="{% url 'community:post_detail' bookmark.post.id %}">
+                                {{ bookmark.post.title }}
+                            </a>
+                        </h2>
+
+                        <p class="bookmark-content">
+                            {{ bookmark.post.content|truncatewords:38 }}
+                        </p>
+
+                        <footer class="bookmark-footer">
+                            <span>By {{ bookmark.post.author.username }}</span>
+                            <span>{{ bookmark.post.comments.count }} comments</span>
+                            <span>{{ bookmark.post.reactions.count }} reactions</span>
+                        </footer>
+
+                        <div class="bookmark-actions">
+                            <a href="{% url 'community:post_detail' bookmark.post.id %}">Open post</a>
+                            <form action="{% url 'community:bookmark_create' bookmark.post.id %}" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="remove" value="1">
+                                <button type="submit">Remove bookmark</button>
+                            </form>
+                        </div>
+                    </article>
+                {% empty %}
+                    <section class="bookmarks-empty" data-bookmark-empty>
+                        <h2>No bookmarked posts yet</h2>
+                        <p>
+                            Save useful posts from group discussions, and they will appear here.
+                        </p>
+                    </section>
+                {% endfor %}
+            </div>
+
+            <section class="bookmarks-empty is-hidden" data-bookmark-no-results>
+                <h2>No matching bookmarks</h2>
+                <p>Try another search term.</p>
+            </section>
+        </main>
+
+        <aside class="bookmarks-sidebar" aria-label="Bookmark summary">
+            <section class="bookmarks-panel">
+                <h2>Summary</h2>
+                <dl class="bookmarks-summary">
+                    <div>
+                        <dt>Saved posts</dt>
+                        <dd>{{ bookmarks_count|default:bookmarks.count }}</dd>
+                    </div>
+                    <div>
+                        <dt>Groups</dt>
+                        <dd>{{ bookmarked_groups_count|default:"-" }}</dd>
+                    </div>
+                    <div>
+                        <dt>Latest save</dt>
+                        <dd>{{ latest_bookmark.created_at|date:"M d"|default:"-" }}</dd>
+                    </div>
+                </dl>
+            </section>
+
+            <section class="bookmarks-panel">
+                <h2>Use this page for</h2>
+                <ul class="bookmarks-rule-list">
+                    <li>Reviewing useful group discussions.</li>
+                    <li>Returning to posts with code examples.</li>
+                    <li>Tracking topics you want to practice later.</li>
+                </ul>
+            </section>
+        </aside>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'community/js/bookmarked_posts.js' %}"></script>
+{% endblock %}
