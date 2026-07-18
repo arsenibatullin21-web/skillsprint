@@ -14,5 +14,20 @@ urlpatterns = [
     path('posts/<int:post_id>/bookmark/create/', views.BookmarkCreateDeleteView.as_view(), name='bookmark_create'),
     path('posts/<int:post_id>/comments/<int:comment_id>/update/', views.CommentUpdateView.as_view(), name='comment_update'),
     path('posts/<int:post_id>/comments/<int:comment_id>/delete/', views.CommentDeleteView.as_view(), name='comment_delete'),
-    path('posts/bookmarked/', views.BookmarkedPostsListView.as_view(), name='posts_bookmarked')
+    path('posts/bookmarked/', views.BookmarkedPostsListView.as_view(), name='posts_bookmarked'),
+
+    #drf urls
+    path('api/v1/groups/<int:group_id>/posts/', views.PostListDetailAPIView.as_view(), name='api_posts_list'),
+    path('api/v1/groups/<int:group_id>/posts/<int:pk>/', views.PostListDetailAPIView.as_view(), name='api_posts_detail'),
+    # path('api/v1/'),
+    # path('api/v1/'),
+    # path('api/v1/'),
+    # path('api/v1/'),
+    # path('api/v1/'),
+    # path('api/v1/'),
+    # path('api/v1/'),
+    # path('api/v1/'),
+    # path('api/v1/'),
+    # path('api/v1/'),
+    # path('api/v1/'),
 ]

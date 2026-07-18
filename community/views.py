@@ -1,15 +1,17 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views import View
 from django.views.generic import ListView, CreateView, DetailView, DeleteView, UpdateView
 from django.core.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied as PermissionDeniedDrf
 from django.urls import reverse_lazy, reverse
-
-
+from rest_framework import mixins, generics, permissions
 from community.forms import PostCreateForm, CommentCreateForm
 from community.models import Reaction, Comment, Bookmark
+from community.permissions import IsMember
+from community.serializers import PostListDetailSerializer
 from study_groups.models import GroupPost, StudyGroup, GroupMembership
 
 
@@ -350,3 +352,27 @@ class BookmarkedPostsListView(LoginRequiredMixin, ListView):
         context['bookmarked_groups_count'] = bookmarked_groups_count
         return context
 
+class PostListDetailAPIView(mixins.ListModelMixin, mixins.RetrieveModelMixin, generics.GenericAPIView):
+    model = GroupPost
+    serializer_class = PostListDetailSerializer
+    permission_classes = [permissions.IsAuthenticated, IsMember]
+
+    def get_queryset(self):
+        group = get_object_or_404(StudyGroup, pk=self.kwargs.get('group_id'))
+        if group.visibility == StudyGroup.Visibility.PRIVATE:
+            is_member = (
+                    group.owner == self.request.user
+                    or group.membership.filter(
+                user=self.request.user,
+                status=GroupMembership.Status.ACTIVE
+            ).exists()
+            )
+
+            if not is_member:
+                raise PermissionDeniedDrf
+        return GroupPost.objects.filter(group=group)
+
+    def get(self, request, *args, **kwargs):
+        if 'pk' in kwargs:
+            return self.retrieve(request, *args, **kwargs)
+        return self.list(request, *args, **kwargs)
