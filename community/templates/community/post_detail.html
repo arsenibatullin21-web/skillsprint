@@ -168,12 +168,36 @@
                                     </div>
                                 </div>
 
-                                {% if request.user == comment.author or can_manage_post %}
-                                    <button type="button" class="comment-menu-button">Manage</button>
+                                {% if request.user == comment.author %}
+                                    {% if request.user == comment.author or can_manage_post %}
+                                        <form action="{% url 'community:comment_delete' post.id comment.id %}" method="post">
+                                        {% csrf_token %}
+                                        <button type="submit" class="post-action-button post-action-danger">
+                                            Delete
+                                        </button>
+                                        </form>
+                                    {% endif %}
+                                    <button type="button" class="comment-menu-button" data-comment-edit-toggle>Edit</button>
                                 {% endif %}
                             </header>
 
                             <p>{{ comment.context }}</p>
+
+                            {% if request.user == comment.author %}
+                                <form class="comment-edit-form is-hidden" action="{% url 'community:comment_update' post.id comment.id %}" method="post" data-comment-edit-form>
+                                    {% csrf_token %}
+                                    <label for="comment-edit-{{ comment.id }}" class="sr-only">Edit comment</label>
+                                    <textarea
+                                        id="comment-edit-{{ comment.id }}"
+                                        name="{{ comment_update_form.context.html_name }}"
+                                        rows="3"
+                                    >{{ comment.context }}</textarea>
+                                    <div class="comment-form-actions">
+                                        <button type="submit">Save</button>
+                                        <button type="button" data-comment-edit-cancel>Cancel</button>
+                                    </div>
+                                </form>
+                            {% endif %}
 
                             <button type="button" class="comment-reply-button" data-reply-toggle>
                                 Reply
@@ -214,6 +238,30 @@
                                                 </div>
                                             </header>
                                             <p>{{ reply.context }}</p>
+                                            {% if request.user == reply.author %}
+                                                <button type="button" class="comment-menu-button" data-comment-edit-toggle>Edit</button>
+                                                <form class="comment-edit-form is-hidden" action="{% url 'community:comment_update' post.id comment.id %}" method="post" data-comment-edit-form>
+                                                    {% csrf_token %}
+                                                    <label for="reply-edit-{{ reply.id }}" class="sr-only">Edit reply</label>
+                                                    <textarea
+                                                        id="reply-edit-{{ reply.id }}"
+                                                        name="{{ comment_update_form.context.html_name }}"
+                                                        rows="3"
+                                                    >{{ reply.context }}</textarea>
+                                                    <div class="comment-form-actions">
+                                                        <button type="submit">Save</button>
+                                                        <button type="button" data-comment-edit-cancel>Cancel</button>
+                                                    </div>
+                                                </form>
+                                                {% if request.user == comment.author or can_manage_post %}
+                                                    <form action="{% url 'community:comment_delete' post.id reply.id %}" method="post">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="comment-menu-button" >
+                                                        Delete
+                                                    </button>
+                                                    </form>
+                                                {% endif %}
+                                            {% endif %}
                                         </article>
                                     {% endfor %}
                                 </div>

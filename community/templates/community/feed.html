@@ -11,7 +11,7 @@
 <div class="feed-page" data-current-user-id="{{ request.user.id|default:'' }}">
     <header class="feed-header">
         <div>
-            <p class="feed-kicker">Group posts</p>
+            <p class="feed-kicker"><a href="{% url 'study_groups:detail' group.id %}">Group Page</a> / Group posts</p>
             <h1>{{ group.name }}</h1>
             <p class="feed-intro">
                 Posts published inside this study group.

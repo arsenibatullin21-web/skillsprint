@@ -7,6 +7,8 @@ const bookmarkInput = document.querySelector('[data-bookmark-input]');
 const bookmarkRemoveInput = document.querySelector('[data-bookmark-remove]');
 const bookmarkLabel = document.querySelector('[data-bookmark-label]');
 const replyButtons = document.querySelectorAll('[data-reply-toggle]');
+const commentEditButtons = document.querySelectorAll('[data-comment-edit-toggle]');
+const commentEditCancelButtons = document.querySelectorAll('[data-comment-edit-cancel]');
 const deleteDialog = document.querySelector('[data-delete-dialog]');
 const openDeleteDialogButton = document.querySelector('[data-open-delete-dialog]');
 const closeDeleteDialogButton = document.querySelector('[data-close-delete-dialog]');
@@ -85,6 +87,36 @@ replyButtons.forEach((button) => {
 
         const isHidden = replyForm.classList.toggle('is-hidden');
         button.textContent = isHidden ? 'Reply' : 'Cancel reply';
+    });
+});
+
+commentEditButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+        const comment = button.closest('.comment-item');
+        const editForm = comment.querySelector('[data-comment-edit-form]');
+
+        if (!editForm) {
+            return;
+        }
+
+        const isHidden = editForm.classList.toggle('is-hidden');
+        button.textContent = isHidden ? 'Edit' : 'Cancel edit';
+    });
+});
+
+commentEditCancelButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+        const editForm = button.closest('[data-comment-edit-form]');
+        const comment = button.closest('.comment-item');
+        const editButton = comment.querySelector('[data-comment-edit-toggle]');
+
+        if (editForm) {
+            editForm.classList.add('is-hidden');
+        }
+
+        if (editButton) {
+            editButton.textContent = 'Edit';
+        }
     });
 });
 

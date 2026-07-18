@@ -100,6 +100,7 @@ class PostDetailView(LoginRequiredMixin, DetailView):
         context['bookmarks_count'] = post.bookmarks.count()
         context['comments'] = post.comments.filter(parent__isnull=True)
         context['comment_form'] = CommentCreateForm()
+        context['comment_update_form'] = CommentCreateForm()
         return context
 
 
@@ -228,14 +229,14 @@ class PostDeleteView(LoginRequiredMixin, DeleteView):
     def dispatch(self, request, *args, **kwargs):
         self.post_object = get_object_or_404(GroupPost, pk=kwargs.get('post_id'))
 
-        is_moderator_owner = self.post_object.group.owner == request.user or GroupMembership.objects.filter(
+        is_moderator_owner_author = self.post_object.group.owner == request.user or GroupMembership.objects.filter(
             group=self.post_object.group,
             user=self.request.user,
             status=GroupMembership.Status.ACTIVE,
             role=GroupMembership.Role.MODERATOR,
-        ).exists()
+        ).exists() or self.post_object.author == self.request.user
 
-        if not is_moderator_owner:
+        if not is_moderator_owner_author:
             raise PermissionDenied
 
         return super().dispatch(request, *args, **kwargs)
@@ -272,4 +273,51 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
     def get_success_url(self):
         return reverse('community:post_detail', kwargs={'post_id': self.post_object.id})
 
+class CommentDeleteView(LoginRequiredMixin, DeleteView):
+    model = Comment
+    pk_url_kwarg = 'comment_id'
 
+    def dispatch(self, request, *args, **kwargs):
+        self.post_object = get_object_or_404(GroupPost, pk=kwargs.get('post_id'))
+        comment = get_object_or_404(Comment, pk=kwargs.get('comment_id'))
+
+        is_moderator_owner_author = self.post_object.group.owner == request.user or GroupMembership.objects.filter(
+            group=self.post_object.group,
+            user=self.request.user,
+            status=GroupMembership.Status.ACTIVE,
+            role=GroupMembership.Role.MODERATOR,
+        ).exists() or comment.author == self.request.user
+
+        if not is_moderator_owner_author:
+            raise PermissionDenied
+
+        return super().dispatch(request, *args, **kwargs)
+
+
+    def get_success_url(self):
+        return reverse('community:post_detail', kwargs={'post_id': self.post_object.id})
+
+class CommentUpdateView(LoginRequiredMixin, UpdateView):
+    model = Comment
+    pk_url_kwarg = 'comment_id'
+    context_object_name = 'comment_current'
+    template_name = 'community/post_detail.html'
+    form_class = CommentCreateForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['comment_update_form'] = CommentCreateForm()
+        return context
+
+    def dispatch(self, request, *args, **kwargs):
+        self.post_object = get_object_or_404(GroupPost, pk=kwargs.get('post_id'))
+
+        is_author = self.post_object.author == self.request.user
+
+        if not is_author:
+            raise PermissionDenied
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_success_url(self):
+        return reverse('community:post_detail', kwargs={'post_id': self.post_object.id})
