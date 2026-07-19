@@ -35,11 +35,6 @@ urlpatterns = [
     path('api/v1/<int:pk>/membership/update/', views.MembershipUpdateAPIView.as_view(), name='api_membership_update'),
     path('api/v1/<int:pk>/membership/destroy/', views.MembershipUpdateAPIView.as_view(), name='api_membership_destroy'),
 
-    path('api/v1/<int:group_id>/posts/', views.PostListDetailAPIView.as_view(), name='api_posts_list'),
-    path('api/v1/<int:group_id>/posts/<int:pk>/', views.PostListDetailAPIView.as_view(), name='api_posts_detail'),
-    path('api/v1/posts/<int:group_id>/create/', views.PostCreateUpdateAPIView.as_view(), name='api_posts_create'),
-    path('api/v1/<int:group_id>/posts/<int:pk>/update/', views.PostCreateUpdateAPIView.as_view(), name='api_posts_update'),
-    path('api/v1/<int:group_id>/posts/<int:pk>/delete/', views.PostCreateUpdateAPIView.as_view(), name='api_posts_delete'),
 
     path('api/v1/resources/<int:group_id>/', views.ResourceListDetailAPIView.as_view(), name='api_resource_list'),
     path('api/v1/resources/<int:group_id>/<int:pk>/', views.ResourceListDetailAPIView.as_view(), name='api_resource_detail'),

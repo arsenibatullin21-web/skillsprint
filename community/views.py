@@ -2,6 +2,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.db.models import Count, Q
 from django.shortcuts import render, get_object_or_404, redirect
+from django.template.context_processors import request
 from django.views import View
 from django.views.generic import ListView, CreateView, DetailView, DeleteView, UpdateView
 from django.core.exceptions import PermissionDenied
@@ -10,8 +11,9 @@ from django.urls import reverse_lazy, reverse
 from rest_framework import mixins, generics, permissions
 from community.forms import PostCreateForm, CommentCreateForm
 from community.models import Reaction, Comment, Bookmark
-from community.permissions import IsMember
-from community.serializers import PostListDetailSerializer
+from community.permissions import IsMember, IsPostAuthorOwnerOrModerator, IsAuthor, IsModeratorOrOwnerOrAuthor
+from community.serializers import PostListDetailSerializer, PostCreateUpdateDestroySerializer, CommentListSerializer, \
+    CommentCreateSerializer, CommentUpdateDestroySerializer
 from study_groups.models import GroupPost, StudyGroup, GroupMembership
 
 
@@ -355,7 +357,12 @@ class BookmarkedPostsListView(LoginRequiredMixin, ListView):
 class PostListDetailAPIView(mixins.ListModelMixin, mixins.RetrieveModelMixin, generics.GenericAPIView):
     model = GroupPost
     serializer_class = PostListDetailSerializer
-    permission_classes = [permissions.IsAuthenticated, IsMember]
+
+    def get_permissions(self):
+        group = get_object_or_404(StudyGroup, pk=self.kwargs.get('group_id'))
+        if group.visibility == StudyGroup.Visibility.PRIVATE:
+            return [permissions.IsAuthenticated(), IsMember()]
+        return [permissions.IsAuthenticated()]
 
     def get_queryset(self):
         group = get_object_or_404(StudyGroup, pk=self.kwargs.get('group_id'))
@@ -376,3 +383,145 @@ class PostListDetailAPIView(mixins.ListModelMixin, mixins.RetrieveModelMixin, ge
         if 'pk' in kwargs:
             return self.retrieve(request, *args, **kwargs)
         return self.list(request, *args, **kwargs)
+
+class PostCreateUpdateDeleteAPIView(mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, generics.GenericAPIView):
+    model = GroupPost
+    serializer_class = PostCreateUpdateDestroySerializer
+
+    def get_queryset(self):
+        group = get_object_or_404(StudyGroup, pk=self.kwargs.get('group_id'))
+        user = self.request.user
+        queryset = GroupPost.objects.filter(group=group)
+
+        if self.request.method in ['PUT', 'PATCH']:
+            queryset = queryset.filter(author=user)
+        if self.request.method == 'DELETE':
+            queryset = queryset.filter(Q(
+                group__membership__user=user,
+                group__membership__status=GroupMembership.Status.ACTIVE,
+                group__membership__role=GroupMembership.Role.MODERATOR) | Q(
+                author=user
+            ) | Q(
+                group__owner=user
+            )
+            ).distinct()
+
+        return queryset
+
+
+    def perform_create(self, serializer):
+        group = get_object_or_404(StudyGroup, pk=self.kwargs.get('group_id'))
+        is_member = group.owner == self.request.user or GroupMembership.objects.filter(
+            group=group,
+            status=GroupMembership.Status.ACTIVE,
+            user=self.request.user
+        ).exists()
+
+        if not is_member:
+            raise PermissionDeniedDrf
+        serializer.save(group=group, author=self.request.user)
+
+    def get_permissions(self):
+        if self.request.method in ['PUT', 'PATCH', 'DELETE']:
+            return [permissions.IsAuthenticated(), IsPostAuthorOwnerOrModerator()]
+        return [permissions.IsAuthenticated(), IsMember()]
+
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
+
+
+class CommentListAPIView(generics.ListAPIView):
+    model = Comment
+    permission_classes = [permissions.IsAuthenticated, ]
+    serializer_class = CommentListSerializer
+
+    def get_queryset(self):
+        post = get_object_or_404(GroupPost, pk=self.kwargs.get('post_id'))
+        queryset = Comment.objects.filter(post=post, parent__isnull=True)
+        if post.group.visibility == StudyGroup.Visibility.PRIVATE:
+            is_member = post.group.owner == self.request.user or GroupMembership.objects.filter(
+                group=post.group,
+                status=GroupMembership.Status.ACTIVE,
+                user=self.request.user
+            ).exists()
+            if not is_member:
+                raise PermissionDeniedDrf
+            return queryset
+        return queryset
+
+class CommentCreateAPIView(generics.CreateAPIView):
+    model = Comment
+    serializer_class = CommentCreateSerializer
+    permission_classes = [permissions.IsAuthenticated, IsMember]
+
+    def perform_create(self, serializer):
+        post = get_object_or_404(GroupPost, pk=self.kwargs.get('post_id'))
+        user = self.request.user
+        is_member = post.group.owner == user or GroupMembership.objects.filter(
+            group=post.group,
+            user=user,
+            status=GroupMembership.Status.ACTIVE
+        ).exists()
+
+        if not is_member:
+            raise PermissionDeniedDrf
+
+        serializer.save(
+            post=post,
+            author=self.request.user,
+        )
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['post'] = get_object_or_404(GroupPost, pk=self.kwargs.get('post_id'))
+        return context
+
+
+class CommentUpdateDeleteAPIView(mixins.UpdateModelMixin, mixins.DestroyModelMixin, generics.GenericAPIView):
+    model = Comment
+    serializer_class = CommentUpdateDestroySerializer
+
+    def get_queryset(self):
+        post = get_object_or_404(GroupPost, pk=self.kwargs.get('post_id'))
+        comment = get_object_or_404(Comment, pk=self.kwargs.get('pk'), post=post)
+        user = self.request.user
+
+        if self.request.method in ['PUT', 'PATCH']:
+            is_able = comment.author == user
+        elif self.request.method == 'DELETE':
+            is_able = comment.author == user or post.group.owner == user or GroupMembership.objects.filter(
+                Q(group=post.group) & (
+                Q(user=user, status=GroupMembership.Status.ACTIVE, role=GroupMembership.Role.MODERATOR)
+
+                )
+            ).exists()
+
+        if not is_able:
+            raise PermissionDeniedDrf
+
+        return Comment.objects.filter(post=comment.post)
+
+    def get_permissions(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return [permissions.IsAuthenticated(), IsAuthor()]
+        if self.request.method == 'DELETE':
+            return [permissions.IsAuthenticated(), IsModeratorOrOwnerOrAuthor()]
+        return [permissions.IsAuthenticated()]
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)

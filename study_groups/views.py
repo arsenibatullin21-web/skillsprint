@@ -21,7 +21,7 @@ from study_groups.permissions import IsOwnerOrModeratorGroup, IsOwnerOrModerator
     IsActiveMember, IsModeratorOrOwner
 from study_groups.serializers import GroupDetailSerializer, UserGroupsSerializer, ExploreGroupsSerializer, \
     GroupCreateUpdateSerializer, MembershipSerializer, MembershipCreateSerializer, MembershipUpdateSerializer, \
-    PostListDetailSerializer, PostCreateUpdateSerializer, ResourceDetailListSerializer, ResourceCreateSerializer, \
+  ResourceDetailListSerializer, ResourceCreateSerializer, \
     ResourceUpdateSerializer
 
 
@@ -506,59 +506,6 @@ class MembershipUpdateAPIView(mixins.UpdateModelMixin, mixins.DestroyModelMixin,
 
     def post(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
-
-    def delete(self, request, *args, **kwargs):
-        return self.destroy(request, *args, **kwargs)
-
-
-class PostListDetailAPIView(mixins.ListModelMixin, mixins.RetrieveModelMixin, generics.GenericAPIView):
-    '''To se all posts of one group/To see one post's detail of ont group'''
-    serializer_class = PostListDetailSerializer
-    permission_classes = [permissions.IsAuthenticated, ]
-
-    def get_queryset(self):
-        group_id = self.kwargs.get('group_id')
-        group = get_object_or_404(StudyGroup, pk=group_id)
-        return GroupPost.objects.filter(group=group)
-
-    def get(self, request, *args, **kwargs):
-        if 'pk' in self.kwargs:
-            return self.retrieve(request, *args, **kwargs)
-        return self.list(request, *args, **kwargs)
-
-class PostCreateUpdateAPIView(mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, generics.GenericAPIView):
-    serializer_class = PostCreateUpdateSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAuthorOrOwnerOrModerator]
-
-
-    def get_queryset(self):
-        group = get_object_or_404(StudyGroup, pk=self.kwargs.get('group_id'))
-        return GroupPost.objects.filter(Q(group=group) & (Q(group__owner=self.request.user) | Q(group__membership__user=self.request.user, group__membership__status=GroupMembership.Status.ACTIVE, group__membership__role=GroupMembership.Role.MODERATOR) | Q(author=self.request.user))).distinct()
-
-    def perform_create(self, serializer):
-        group_id = self.kwargs.get('group_id')
-        group = get_object_or_404(StudyGroup, pk=group_id)
-
-        is_member = GroupMembership.objects.filter(
-            group=group,
-            user=self.request.user,
-            status=GroupMembership.Status.ACTIVE
-        ).exists()
-
-        if not is_member:
-            raise PermissionDenied(
-                'You must be an active member to create posts.'
-            )
-        serializer.save(group=group, author=self.request.user)
-
-    def post(self, request, *args, **kwargs):
-        return self.create(request, *args, **kwargs)
-
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
-
-    def patch(self, request, *args, **kwargs):
-        return self.partial_update(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)

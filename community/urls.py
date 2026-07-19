@@ -19,9 +19,15 @@ urlpatterns = [
     #drf urls
     path('api/v1/groups/<int:group_id>/posts/', views.PostListDetailAPIView.as_view(), name='api_posts_list'),
     path('api/v1/groups/<int:group_id>/posts/<int:pk>/', views.PostListDetailAPIView.as_view(), name='api_posts_detail'),
-    # path('api/v1/'),
-    # path('api/v1/'),
-    # path('api/v1/'),
+    path('api/v1/groups/<int:group_id>/posts/create/', views.PostCreateUpdateDeleteAPIView.as_view(), name='api_posts_create'),
+    path('api/v1/groups/<int:group_id>/posts/<int:pk>/update/', views.PostCreateUpdateDeleteAPIView.as_view(), name='api_posts_update'),
+    path('api/v1/groups/<int:group_id>/posts/<int:pk>/delete/', views.PostCreateUpdateDeleteAPIView.as_view(), name='api_posts_delete'),
+
+    path('api/v1/posts/<int:post_id>/comments/', views.CommentListAPIView.as_view(), name='api_comments'),
+    path('api/v1/posts/<int:post_id>/comments/create/', views.CommentCreateAPIView.as_view(), name='api_comments_create'),
+    path('api/v1/posts/<int:post_id>/comments/<int:pk>/update/', views.CommentUpdateDeleteAPIView.as_view(), name='api_comments_update'),
+    path('api/v1/posts/<int:post_id>/comments/<int:pk>/delete/', views.CommentUpdateDeleteAPIView.as_view(), name='api_comments_delete'),
+
     # path('api/v1/'),
     # path('api/v1/'),
     # path('api/v1/'),

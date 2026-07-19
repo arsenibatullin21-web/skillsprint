@@ -122,23 +122,6 @@ class MembershipUpdateSerializer(serializers.ModelSerializer):
             )
         return attrs
 
-class PostListDetailSerializer(serializers.ModelSerializer):
-    '''Posts of one group'''
-    group = serializers.SlugRelatedField('name', read_only=True)
-    author = serializers.StringRelatedField(read_only=True)
-    class Meta:
-        model = GroupPost
-        fields = ['group', 'author', 'title', 'content', 'updated_at','created_at',]
-
-
-class PostCreateUpdateSerializer(serializers.ModelSerializer):
-    '''Create and Update posts'''
-    group = serializers.SlugRelatedField('name', read_only=True)
-    author = serializers.StringRelatedField(read_only=True)
-
-    class Meta:
-        model = GroupPost
-        fields = ['group','author','title', 'content']
 
 class ResourceDetailListSerializer(serializers.ModelSerializer):
     '''To see all resources of the group and detail of one resource'''
