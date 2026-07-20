@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from community.models import Comment
+from community.models import Comment, Reaction, Bookmark
 from study_groups.models import GroupPost
 
 
@@ -81,4 +81,23 @@ class CommentUpdateDestroySerializer(serializers.ModelSerializer):
         fields = ['id','post', 'author','context', 'parent', 'updated_at', 'created_at']
         read_only_fields = ['updated_at', 'created_at', 'id', 'parent']
 
+
+class ReactionListSerializer(serializers.ModelSerializer):
+    post = serializers.StringRelatedField(read_only=True)
+    user = serializers.StringRelatedField(read_only=True)
+    class Meta:
+        model = Reaction
+        fields = ['post', 'user', 'type', 'updated_at', 'created_at']
+
+class ReactionSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Reaction
+        fields = ['type']
+
+class BookmarksListSerializer(serializers.ModelSerializer):
+    post = serializers.StringRelatedField(read_only=True)
+    class Meta:
+        model = Bookmark
+        fields = ['id','post', 'user', 'created_at']
 

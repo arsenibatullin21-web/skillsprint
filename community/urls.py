@@ -28,11 +28,12 @@ urlpatterns = [
     path('api/v1/posts/<int:post_id>/comments/<int:pk>/update/', views.CommentUpdateDeleteAPIView.as_view(), name='api_comments_update'),
     path('api/v1/posts/<int:post_id>/comments/<int:pk>/delete/', views.CommentUpdateDeleteAPIView.as_view(), name='api_comments_delete'),
 
-    # path('api/v1/'),
-    # path('api/v1/'),
-    # path('api/v1/'),
-    # path('api/v1/'),
-    # path('api/v1/'),
+    path('api/v1/posts/<int:post_id>/reactions/list/', views.ReactionListAPIView.as_view(), name='api_reactions'),
+    path('api/v1/posts/<int:post_id>/reactions/', views.ReactionToggleAPIView.as_view(), name='api_reactions_toggle'),
+
+    path('api/v1/bookmarks/list/', views.BookmarkListAPIView.as_view(), name='api_my_bookmarks'),
+    path('api/v1/<int:post_id>/bookmarks/', views.BookmarkToggleAPIView.as_view(), name='api_bookmarks_toggle'),
+
     # path('api/v1/'),
     # path('api/v1/'),
     # path('api/v1/'),

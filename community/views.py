@@ -1,5 +1,6 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
+from django.core.serializers import serialize
 from django.db.models import Count, Q
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.context_processors import request
@@ -9,11 +10,16 @@ from django.core.exceptions import PermissionDenied
 from rest_framework.exceptions import PermissionDenied as PermissionDeniedDrf
 from django.urls import reverse_lazy, reverse
 from rest_framework import mixins, generics, permissions
+from rest_framework.response import Response
+from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_204_NO_CONTENT
+from rest_framework.views import APIView
+
 from community.forms import PostCreateForm, CommentCreateForm
 from community.models import Reaction, Comment, Bookmark
 from community.permissions import IsMember, IsPostAuthorOwnerOrModerator, IsAuthor, IsModeratorOrOwnerOrAuthor
 from community.serializers import PostListDetailSerializer, PostCreateUpdateDestroySerializer, CommentListSerializer, \
-    CommentCreateSerializer, CommentUpdateDestroySerializer
+    CommentCreateSerializer, CommentUpdateDestroySerializer, ReactionListSerializer, ReactionSerializer, \
+    BookmarksListSerializer
 from study_groups.models import GroupPost, StudyGroup, GroupMembership
 
 
@@ -525,3 +531,115 @@ class CommentUpdateDeleteAPIView(mixins.UpdateModelMixin, mixins.DestroyModelMix
 
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
+
+class ReactionListAPIView(generics.ListAPIView):
+    model = Reaction
+    serializer_class = ReactionListSerializer
+    permission_classes = [permissions.IsAuthenticated, ]
+
+    def get_queryset(self):
+        post = get_object_or_404(GroupPost, pk=self.kwargs.get('post_id'))
+        group = post.group
+        user = self.request.user
+        queryset = Reaction.objects.filter(post=post)
+        if group.visibility == StudyGroup.Visibility.PRIVATE:
+            is_member = post.group.owner == user or GroupMembership.objects.filter(
+                group=post.group,
+                status=GroupMembership.Status.ACTIVE,
+                user=user
+            ).exists()
+
+            if not is_member:
+                raise PermissionDeniedDrf
+            return queryset
+        return queryset
+
+class ReactionToggleAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated, ]
+
+    def post(self, request, *args, **kwargs):
+        post = get_object_or_404(GroupPost, pk=self.kwargs.get('post_id'))
+        group = post.group
+
+        if group.visibility == StudyGroup.Visibility.PRIVATE:
+            is_member = group.owner == self.request.user or GroupMembership.objects.filter(
+                group=group,
+                user=self.request.user,
+                status=GroupMembership.Status.ACTIVE,
+            ).exists()
+
+            if not is_member:
+                raise PermissionDeniedDrf
+
+
+        serializer = ReactionSerializer(data=request.data)
+        reaction = Reaction.objects.filter(post=post, user=self.request.user).first()
+        if serializer.is_valid(raise_exception=True):
+            reaction_type = serializer.validated_data.get('type')
+
+            if reaction and reaction.type == reaction_type:
+                reaction.delete()
+                return Response({
+                    'Message': "Reaction was deleted successfully."
+                }, status=HTTP_200_OK)
+
+            reaction, created = Reaction.objects.update_or_create(
+                post=post,
+                user=self.request.user,
+                defaults={'type': reaction_type}
+            )
+            return Response({
+                'Message': "Reaction created." if created else "Reaction updated.",
+                'Type': reaction_type
+            }, status=HTTP_201_CREATED if created else HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
+
+class BookmarkListAPIView(generics.ListAPIView):
+    model = Bookmark
+    serializer_class = BookmarksListSerializer
+    permission_classes = [permissions.IsAuthenticated, ]
+
+    def get_queryset(self):
+        return Bookmark.objects.filter(user=self.request.user)
+
+
+class BookmarkToggleAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated, ]
+
+    def post(self, request, *args, **kwargs):
+        post = get_object_or_404(GroupPost, pk=self.kwargs.get('post_id'))
+        group = post.group
+        user = self.request.user
+
+        if group.visibility == StudyGroup.Visibility.PRIVATE:
+            is_member = group.owner == user or GroupMembership.objects.filter(
+                group=group,
+                user=user,
+                status=GroupMembership.Status.ACTIVE
+            ).exists()
+
+            if not is_member:
+                raise PermissionDeniedDrf
+
+        bookmark = Bookmark.objects.filter(post=post, user=user).first()
+
+        if bookmark:
+            bookmark.delete()
+            return Response({
+                'Message': "Bookmark was deleted successfully.",
+                'post': post.title
+            }, status=HTTP_200_OK)
+
+        bookmark = Bookmark.objects.create(
+            post=post,
+            user=user
+        )
+        return Response({
+            'Message': "Bookmark is added.",
+            'post': post.title
+        }, status=HTTP_201_CREATED)
+
+
+
+
