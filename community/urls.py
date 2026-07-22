@@ -34,7 +34,4 @@ urlpatterns = [
     path('api/v1/bookmarks/list/', views.BookmarkListAPIView.as_view(), name='api_my_bookmarks'),
     path('api/v1/<int:post_id>/bookmarks/', views.BookmarkToggleAPIView.as_view(), name='api_bookmarks_toggle'),
 
-    # path('api/v1/'),
-    # path('api/v1/'),
-    # path('api/v1/'),
 ]

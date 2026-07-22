@@ -85,9 +85,10 @@ class CommentUpdateDestroySerializer(serializers.ModelSerializer):
 class ReactionListSerializer(serializers.ModelSerializer):
     post = serializers.StringRelatedField(read_only=True)
     user = serializers.StringRelatedField(read_only=True)
+    id = serializers.ReadOnlyField()
     class Meta:
         model = Reaction
-        fields = ['post', 'user', 'type', 'updated_at', 'created_at']
+        fields = ['id','post', 'user', 'type', 'updated_at', 'created_at']
 
 class ReactionSerializer(serializers.ModelSerializer):
 

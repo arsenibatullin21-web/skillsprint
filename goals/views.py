@@ -17,7 +17,7 @@ from goals.serializers import GoalsListDetailSerializer, GoalsListDetailSerializ
     GoalUpdateSerializer, ProgressCreateSerializer, MilestoneSerializer
 
 
-class MyGoalsView(ListView):
+class MyGoalsView(LoginRequiredMixin, ListView):
     template_name = 'goals/home.html'
     context_object_name = 'goals'
     model = LearningGoals
@@ -133,7 +133,7 @@ class CreateGoalView(LoginRequiredMixin,CreateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class GoalDetailView(DetailView):
+class GoalDetailView(LoginRequiredMixin, DetailView):
     model = LearningGoals
     template_name = 'goals/goal_detail.html'
     context_object_name = 'goal'
@@ -145,6 +145,11 @@ class GoalDetailView(DetailView):
             is_completed=False,
         ).order_by('position').first()
         return context
+
+    def get_queryset(self):
+        queryset = LearningGoals.objects.filter(Q(owner=self.request.user) | Q(visibility=LearningGoals.Visibility.PUBLIC))
+        return queryset
+
 
 class GoalUpdateView(LoginRequiredMixin, UpdateView):
     model = LearningGoals
@@ -248,7 +253,10 @@ class GoalProgressCreateView(LoginRequiredMixin, CreateView):
         goal.progress_percent = progress_percent
         if progress_percent == 100:
             goal.status = LearningGoals.Status.COMPLETED
-        goal.save(update_fields=['progress_percent'])
+            goal.save(update_fields=['progress_percent', 'status'])
+        else:
+            goal.save(update_fields=['progress_percent'])
+
         self.goal = goal
         return super().form_valid(form)
 
