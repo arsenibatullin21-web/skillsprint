@@ -23,6 +23,8 @@ from study_groups.serializers import GroupDetailSerializer, UserGroupsSerializer
     GroupCreateUpdateSerializer, MembershipSerializer, MembershipCreateSerializer, MembershipUpdateSerializer, \
   ResourceDetailListSerializer, ResourceCreateSerializer, \
     ResourceUpdateSerializer
+from study_groups.services import join_group, leave_group, accept_membership, reject_membership, make_moderator, \
+    remove_member, transfer_ownership
 
 
 # Create your views here.
@@ -185,39 +187,19 @@ class GroupJoinView(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
         group = get_object_or_404(StudyGroup, pk=kwargs['id'])
 
-        if group.owner == self.request.user:
-            messages.info(request,'You are owner of this group')
-            return redirect('study_groups:detail', id = group.id)
+        membership, result = join_group(user=self.request.user, group=group)
 
-
-        membership, created = GroupMembership.objects.get_or_create(
-            group=group,
-            user=request.user,
-            defaults={
-                'role': GroupMembership.Role.MEMBER,
-                'status': (
-                    GroupMembership.Status.ACTIVE
-                    if group.visibility == StudyGroup.Visibility.PUBLIC
-                    else GroupMembership.Status.PENDING
-                )
-            }
-        )
-
-        if not created:
-            if membership.status == GroupMembership.Status.ACTIVE:
-                messages.info(request, 'You are already in the group')
-            elif membership.status == GroupMembership.Status.PENDING:
-                messages.info(request,'Your request is not accepted yet')
-            elif membership.status == GroupMembership.Status.REJECTED:
-                membership.status = GroupMembership.Status.PENDING
-                membership.save(update_fields=['status'])
-                messages.success(request, 'Your join request was sent again')
-
-            return redirect('study_groups:detail', id=group.id)
-
-        if membership.status == GroupMembership.Status.ACTIVE:
+        if result == 'Owner':
+            messages.info(request, 'You are owner of this group')
+        elif result == 'Active':
+            messages.info(request, 'You are already in the group')
+        elif result == 'Pending':
+            messages.info(request, 'Your request is not accepted yet')
+        elif result == 'Rejected':
+            messages.success(request, 'Your join request was sent again')
+        elif result == 'Joined':
             messages.success(request, 'You joined the group successfully')
-        elif membership.status == GroupMembership.Status.PENDING:
+        elif result == 'RequestSentAgain':
             messages.info(request, 'Request to join was sent')
 
         return redirect('study_groups:detail', id=group.id)
@@ -227,22 +209,15 @@ class GroupLeaveView(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
         group = get_object_or_404(StudyGroup, pk=kwargs['id'])
 
-        if group.owner == request.user:
+        result = leave_group(user=self.request.user, group=group)
+        if result == 'PassOwnership':
             messages.info(request, 'You have to pass your ownership to leave the group')
-            return redirect('study_groups:detail', id=group.id)
-
-        membership = GroupMembership.objects.filter(
-            group=group,
-            user=request.user
-        ).first()
-
-        if membership:
-            membership.delete()
+        elif result == 'Left':
             messages.success(request, "You left the group")
-            return redirect('study_groups:detail', id=group.id)
-        else:
+        elif result == 'NotMember':
             messages.info(request, 'You are not member of the group')
-            return redirect('study_groups:detail', id=group.id)
+
+        return redirect('study_groups:detail', id=group.id)
 
 
 class GroupRequestView(LoginRequiredMixin, ListView):
@@ -285,9 +260,12 @@ class UserAcceptView(LoginRequiredMixin, View):
             group=group,
             status=GroupMembership.Status.PENDING,
         )
-        membership.status = GroupMembership.Status.ACTIVE
-        membership.save(update_fields=['status'])
-        messages.success(request, f'{membership.user.username} accepted successfully')
+        result = accept_membership(membership)
+
+        if result == 'Accepted':
+            messages.success(request, f'{membership.user.username} accepted successfully')
+        elif result == 'NotPending':
+            messages.error(request, 'Only pending requests can be accepted')
         return redirect('study_groups:requests', id=group.id)
 
 class UserRejectView(LoginRequiredMixin, View):
@@ -299,9 +277,11 @@ class UserRejectView(LoginRequiredMixin, View):
             group=group,
             status=GroupMembership.Status.PENDING,
         )
-        membership.status = GroupMembership.Status.REJECTED
-        membership.save(update_fields=['status'])
-        messages.success(request, f'{membership.user.username} rejected successfully')
+        result = reject_membership(membership)
+        if result == 'Rejected':
+            messages.success(request, f'{membership.user.username} rejected successfully')
+        elif result == 'NotPending':
+            messages.error(request, 'Only pending requests can be accepted')
         return redirect('study_groups:requests', id=group.id)
 
 class GroupMembersView(LoginRequiredMixin, ListView):
@@ -345,21 +325,16 @@ class MakeModeratorView(LoginRequiredMixin, View):
             status=GroupMembership.Status.ACTIVE,
         ).first()
 
-        can_manage = group.owner == request.user or (
-            current_member and current_member.role == GroupMembership.Role.MODERATOR
-        )
-        if not can_manage:
+        result = make_moderator(current_member=current_member, group=group, membership=membership)
+
+
+        if result == 'NoAccess':
             messages.error(request, "You don't have access to this action")
-            return redirect('study_groups:members', id=group.id)
-
-        if membership.status != GroupMembership.Status.ACTIVE or membership.role != GroupMembership.Role.MEMBER:
+        elif result == 'NotActiveMember':
             messages.error(request, 'Only active members can become moderators')
-            return redirect('study_groups:members', id=group.id)
+        elif result == 'Moderator':
+            messages.success(request, f'{membership.user.username} became a moderator')
 
-
-        membership.role = GroupMembership.Role.MODERATOR
-        membership.save(update_fields=['role'])
-        messages.success(request, f'{membership.user.username} became a moderator')
         return redirect('study_groups:members', id=group.id)
 
 
@@ -373,55 +348,34 @@ class RemoveMemberView(LoginRequiredMixin, View):
             status=GroupMembership.Status.ACTIVE,
         ).first()
 
-        can_manage = group.owner == request.user or (
-            current_member
-            and current_member.role == GroupMembership.Role.MODERATOR
-            and membership.role == GroupMembership.Role.MEMBER
-        )
-        if not can_manage:
+
+        username, result = remove_member(current_member=current_member, group=group, membership=membership, current_user=self.request.user)
+
+
+        if result == 'NoAccess':
             messages.error(request, "You don't have access to this action")
-            return redirect('study_groups:members', id=group.id)
-
-        if membership.role == GroupMembership.Role.OWNER or membership.user == group.owner:
+        elif result == 'NotMember':
+            messages.error(request, 'You are not member of the group')
+        elif result == 'Owner':
             messages.error(request, 'Owner cannot be removed from the group')
-            return redirect('study_groups:members', id=group.id)
-
-        username = membership.user.username
-        membership.delete()
-        messages.success(request, f'{username} was removed from the group')
+        elif result == 'Removed':
+            messages.success(request, f'{username} was removed from the group')
         return redirect('study_groups:members', id=group.id)
 
 class MakeOwnerView(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
         group = get_object_or_404(StudyGroup, pk=kwargs.get('group_id'))
         membership = get_object_or_404(GroupMembership, group=group, pk=kwargs.get('membership_id'))
-        membership_owner = GroupMembership.objects.filter(group=group, role=GroupMembership.Role.OWNER).first()
+        username, result = transfer_ownership(group=group, membership=membership, current_user=self.request.user)
 
-        if group.owner != request.user:
+        if result == 'NotOwner':
             messages.error(request, "Only the current owner can transfer ownership")
-            return redirect('study_groups:members', id=group.id)
-
-        if membership.status != GroupMembership.Status.ACTIVE or membership.role != GroupMembership.Role.MODERATOR:
+        elif result == 'NotModerator':
             messages.error(request, 'Member is not a moderator')
-            return redirect('study_groups:members', id=group.id)
-
-        if not membership_owner:
+        elif result == 'OwnerNotFound':
             messages.error(request, 'Current owner membership was not found')
-            return redirect('study_groups:members', id=group.id)
-
-        with transaction.atomic():
-            old_owner_username = group.owner.username
-
-            group.owner = membership.user
-            group.save(update_fields=['owner'])
-
-            membership.role = GroupMembership.Role.OWNER
-            membership.save(update_fields=['role'])
-
-            membership_owner.role = GroupMembership.Role.MODERATOR
-            membership_owner.save(update_fields=['role'])
-
-        messages.success(request, f'{membership.user.username} became the owner. {old_owner_username} is now a moderator')
+        elif result == 'Changed':
+            messages.success(request, f'{username} became the owner. Old owner is now a moderator')
         return redirect('study_groups:members', id=group.id)
 
 
