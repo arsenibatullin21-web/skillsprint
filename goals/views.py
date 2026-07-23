@@ -15,6 +15,7 @@ from goals.forms import GoalCreateForm, MilestoneFormSet, MilestoneUpdateForm, P
 from goals.models import LearningGoals, ProgressEntry, Milestone
 from goals.serializers import GoalsListDetailSerializer, GoalsListDetailSerializer, GoalsCreateSerializer, \
     GoalUpdateSerializer, ProgressCreateSerializer, MilestoneSerializer
+from goals.services import create_goal_with_milestone, update_goal_with_milestones, create_progress_entry
 
 
 class MyGoalsView(LoginRequiredMixin, ListView):
@@ -114,21 +115,10 @@ class CreateGoalView(LoginRequiredMixin,CreateView):
             prefix="milestones",
         )
 
-        if not milestone_formset.is_valid():
+        goal, result = create_goal_with_milestone(user=self.request.user, form=form, formset=milestone_formset)
+        if result == "Invalid Formset":
             return self.form_invalid(form)
-
-        with transaction.atomic():
-            self.object = form.save(commit=False)
-            self.object.owner = self.request.user
-            self.object.save()
-
-            milestone_formset.instance = self.object
-            milestones = milestone_formset.save(commit=False)
-
-            for position, milestone in enumerate(milestones, start=1):
-                milestone.goal = self.object
-                milestone.position = position
-                milestone.save()
+        self.object = goal
 
         return HttpResponseRedirect(self.get_success_url())
 
@@ -164,34 +154,13 @@ class GoalUpdateView(LoginRequiredMixin, UpdateView):
         context = self.get_context_data(form=form)
         formset = context['milestone_formset']
 
-        if not formset.is_valid():
+        goal, result = update_goal_with_milestones(goal=self.object, form=form, formset=formset)
+
+
+        if result == 'InvalidFormset':
             return self.form_invalid(form)
-
-
-        with transaction.atomic():
-            self.object = form.save()
-
-            formset.instance = self.object
-            formset.save()
-
-            position = 1
-
-            for milestone_form in formset.forms:
-                cleaned_data = milestone_form.cleaned_data
-                if not cleaned_data:
-                    continue
-                if cleaned_data.get("DELETE"):
-                    continue
-
-                milestone = milestone_form.instance
-
-                if milestone.pk:
-                    milestone.position = position
-                    milestone.is_completed = cleaned_data.get('is_completed')
-                    milestone.save(update_fields=['position'])
-                    position += 1
-
-            return HttpResponseRedirect(self.get_success_url())
+        self.object = goal
+        return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
         return reverse('goals:detail', kwargs={'id': self.object.pk})
@@ -247,10 +216,13 @@ class GoalProgressCreateView(LoginRequiredMixin, CreateView):
     @transaction.atomic()
     def form_valid(self, form):
         goal = get_object_or_404(LearningGoals, pk=self.kwargs['id'], owner=self.request.user)
+        progress, result = create_progress_entry(user=self.request.user, goal=goal, form=form)
 
-        form.instance.goal = goal
-        self.goal = goal
-        return super().form_valid(form)
+        if result == 'NotOwner':
+            return self.form_invalid(form)
+
+        self.goal = progress.goal
+        return HttpResponseRedirect(self.get_success_url())
 
 
 class GoalExploreView(ListView):
