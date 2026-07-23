@@ -20,6 +20,7 @@ from community.permissions import IsMember, IsPostAuthorOwnerOrModerator, IsAuth
 from community.serializers import PostListDetailSerializer, PostCreateUpdateDestroySerializer, CommentListSerializer, \
     CommentCreateSerializer, CommentUpdateDestroySerializer, ReactionListSerializer, ReactionSerializer, \
     BookmarksListSerializer
+from community.services import toggle_reaction, toggle_bookmark, user_can_access_group, user_can_manage_post
 from study_groups.models import GroupPost, StudyGroup, GroupMembership
 
 
@@ -31,14 +32,10 @@ class GroupFeedView(LoginRequiredMixin, ListView):
 
     def dispatch(self, request, *args, **kwargs):
         self.group = get_object_or_404(StudyGroup, pk=kwargs.get('group_id'))
-        if self.group.visibility == StudyGroup.Visibility.PRIVATE:
-            is_member = self.request.user == self.group.owner or GroupMembership.objects.filter(
-                group=self.group,
-                user=self.request.user,
-                status=GroupMembership.Status.ACTIVE
-            ).exists()
-            if not is_member:
-                raise PermissionDenied
+
+        can_access = user_can_access_group(user=self.request.user, group=self.group)
+        if not can_access:
+            raise PermissionDenied
 
         return super().dispatch(request, *args, **kwargs)
 
@@ -73,12 +70,8 @@ class PostCreateView(LoginRequiredMixin, CreateView):
 
     def dispatch(self, request, *args, **kwargs):
         self.group = get_object_or_404(StudyGroup, pk=kwargs.get('group_id'))
-        is_member = self.group.owner == self.request.user or GroupMembership.objects.filter(
-            group=self.group,
-            user=self.request.user,
-            status=GroupMembership.Status.ACTIVE
-        ).exists()
-        if not is_member:
+        can_access = user_can_access_group(user=self.request.user, group=self.group)
+        if not can_access:
             raise PermissionDenied
 
         return super().dispatch(request, *args, **kwargs)
@@ -101,7 +94,7 @@ class PostDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         reaction = Reaction.objects.filter(post=post, user=self.request.user).first()
         context['user_reaction'] = reaction.type if reaction else None
-        context['can_manage_post'] = post.group.membership.filter(user=self.request.user, status=GroupMembership.Status.ACTIVE, role=GroupMembership.Role.MODERATOR).exists() or post.group.owner == self.request.user
+        context['can_manage_post'] = user_can_manage_post(user=self.request.user, post=post)
         context['helpful_count'] = post.reactions.filter(type=Reaction.Type.HELPFUL).count()
         context['celebrate_count'] = post.reactions.filter(type=Reaction.Type.CELEBRATE).count()
         context['like_count'] = post.reactions.filter(type=Reaction.Type.LIKE).count()
@@ -128,13 +121,8 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
         user = self.request.user
         post = get_object_or_404(GroupPost, pk=kwargs.get('post_id'))
 
-        is_member = post.group.owner == user or GroupMembership.objects.filter(
-            group=post.group,
-            user=self.request.user,
-            status=GroupMembership.Status.ACTIVE
-        ).exists()
-
-        if not is_member:
+        can_access = user_can_access_group(user=user, group=post.group)
+        if not can_access:
             raise PermissionDenied
 
         return super().dispatch(request, *args, **kwargs)
@@ -164,36 +152,18 @@ class ReactionCreateUpdateDeleteView(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
         remove = self.request.POST.get('remove') == '1'
         reaction_type = self.request.POST.get('type')
-        reaction = Reaction.objects.filter(
-            post=self.post_object,
-            user=self.request.user
-        ).first()
 
-        if reaction_type not in Reaction.Type.values:
+        reaction, action = toggle_reaction(self.request.user, self.post_object, reaction_type, remove)
+        if action == 'invalid':
             messages.error(request, 'Invalid reaction.')
-            return redirect('community:post_detail', post_id=self.post_object.id)
-
-        if remove and reaction and reaction.type == reaction_type:
-            reaction.delete()
-        else:
-            reaction = Reaction.objects.update_or_create(
-                post=self.post_object,
-                user=self.request.user,
-                defaults={'type': reaction_type}
-            )
-
         return redirect('community:post_detail', post_id=self.post_object.id)
 
     def dispatch(self, request, *args, **kwargs):
         self.post_object = get_object_or_404(GroupPost, pk=kwargs.get('post_id'))
         user = self.request.user
-        is_member = self.post_object.group.owner == user or GroupMembership.objects.filter(
-            group=self.post_object.group,
-            user=self.request.user,
-            status=GroupMembership.Status.ACTIVE
-        ).exists()
+        can_access = user_can_access_group(user=user, group=self.post_object.group)
 
-        if not is_member:
+        if not can_access:
             raise PermissionDenied
 
         return super().dispatch(request, *args, **kwargs)
@@ -202,18 +172,10 @@ class BookmarkCreateDeleteView(LoginRequiredMixin, View):
 
     def post(self, request, *args, **kwargs):
         remove = self.request.POST.get('remove') == '1'
-        bookmark_object = Bookmark.objects.filter(
-            post=self.post_object,
-            user=self.request.user
-        ).first()
 
-        if remove and bookmark_object:
-            bookmark_object.delete()
-        else:
-            Bookmark.objects.update_or_create(
-                post=self.post_object,
-                user=self.request.user
-            )
+        bookmark = toggle_bookmark(user=self.request.user, post=self.post_object, remove=remove)
+
+
 
         return redirect('community:post_detail', post_id=self.post_object.id)
 
@@ -221,13 +183,9 @@ class BookmarkCreateDeleteView(LoginRequiredMixin, View):
     def dispatch(self, request, *args, **kwargs):
         self.post_object = get_object_or_404(GroupPost, pk=kwargs.get('post_id'))
         user = self.request.user
-        is_member = self.post_object.group.owner == user or GroupMembership.objects.filter(
-            group=self.post_object.group,
-            user=self.request.user,
-            status=GroupMembership.Status.ACTIVE
-        ).exists()
+        can_access = user_can_access_group(user=user, group=self.post_object.group)
 
-        if not is_member:
+        if not can_access:
             raise PermissionDenied
 
         return super().dispatch(request, *args, **kwargs)
