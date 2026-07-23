@@ -249,14 +249,6 @@ class GoalProgressCreateView(LoginRequiredMixin, CreateView):
         goal = get_object_or_404(LearningGoals, pk=self.kwargs['id'], owner=self.request.user)
 
         form.instance.goal = goal
-        progress_percent = form.cleaned_data['progress_percent']
-        goal.progress_percent = progress_percent
-        if progress_percent == 100:
-            goal.status = LearningGoals.Status.COMPLETED
-            goal.save(update_fields=['progress_percent', 'status'])
-        else:
-            goal.save(update_fields=['progress_percent'])
-
         self.goal = goal
         return super().form_valid(form)
 

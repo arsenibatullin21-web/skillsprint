@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.db.utils import IntegrityError
+from django.test import TestCase
 
 from django.urls import reverse
 from rest_framework import status
@@ -882,7 +882,396 @@ from study_groups.models import GroupPost, StudyGroup, GroupMembership
 #         self.assertIn(self.public_post_reaction.id, ids)
 
 
-class ReactionTogglePermissionsTest(APITestCase):
+# class ReactionTogglePermissionsTest(APITestCase):
+#     def setUp(self):
+#         self.owner_user = get_user_model().objects.create_user(
+#             username='owner123',
+#             email='owner123@mail.com',
+#             password='test123'
+#         )
+#
+#         self.member_user = get_user_model().objects.create_user(
+#             username='member123',
+#             email='member123@mail.com',
+#             password='test123'
+#         )
+#
+#         self.member2_user = get_user_model().objects.create_user(
+#             username='member2123',
+#             email='member2123@mail.com',
+#             password='test2123'
+#         )
+#
+#
+#         self.other_user = get_user_model().objects.create_user(
+#             username='other123',
+#             email='other123@mail.com',
+#             password='test123'
+#         )
+#
+#         self.private_group = StudyGroup.objects.create(
+#             owner=self.owner_user,
+#             name='Private Test Group',
+#             description='Private group for reaction tests',
+#             visibility=StudyGroup.Visibility.PRIVATE,
+#             topic='Django'
+#         )
+#
+#         self.public_group = StudyGroup.objects.create(
+#             owner=self.owner_user,
+#             name='Public Test Group',
+#             description='Public group for reaction tests',
+#             visibility=StudyGroup.Visibility.PUBLIC,
+#             topic='DRF'
+#         )
+#
+#         GroupMembership.objects.create(
+#             group=self.private_group,
+#             user=self.member_user,
+#             role=GroupMembership.Role.MEMBER,
+#             status=GroupMembership.Status.ACTIVE
+#         )
+#
+#         GroupMembership.objects.create(
+#             group=self.private_group,
+#             user=self.member2_user,
+#             role=GroupMembership.Role.MEMBER,
+#             status=GroupMembership.Status.ACTIVE
+#         )
+#
+#         self.private_post = GroupPost.objects.create(
+#             group=self.private_group,
+#             author=self.member_user,
+#             title='Private post',
+#             content='Private post content'
+#         )
+#
+#         self.private_post_other = GroupPost.objects.create(
+#             group=self.private_group,
+#             author=self.member_user,
+#             title='Other private post',
+#             content='Other private post content'
+#         )
+#
+#         self.public_post = GroupPost.objects.create(
+#             group=self.public_group,
+#             author=self.owner_user,
+#             title='Public post',
+#             content='Public post content'
+#         )
+#
+#         self.private_post_reaction_1 = Reaction.objects.create(
+#             post=self.private_post,
+#             user=self.member_user,
+#             type=Reaction.Type.LIKE
+#         )
+#
+#
+#         self.other_post_reaction = Reaction.objects.create(
+#             post=self.private_post_other,
+#             user=self.member_user,
+#             type=Reaction.Type.CELEBRATE
+#         )
+#
+#         self.public_post_reaction = Reaction.objects.create(
+#             post=self.public_post,
+#             user=self.other_user,
+#             type=Reaction.Type.LIKE
+#         )
+#
+#     def test_member_can_put_reaction(self):
+#         self.client.force_authenticate(user=self.owner_user)
+#
+#         response = self.client.post(reverse('community:api_reactions_toggle', kwargs={'post_id': self.private_post.id}), data={
+#             'type': Reaction.Type.CELEBRATE
+#         })
+#
+#         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+#         self.assertTrue(Reaction.objects.filter(post=self.private_post.id, user=self.owner_user).exists())
+#
+#     def test_member_reclick_deletes_reaction(self):
+#         self.client.force_authenticate(user=self.member_user)
+#
+#         response = self.client.post(reverse('community:api_reactions_toggle', kwargs={'post_id': self.private_post.id}),
+#                                     data={
+#                                         'type': Reaction.Type.LIKE
+#                                     }, format='json')
+#
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#         self.assertFalse(Reaction.objects.filter(post=self.private_post.id, user=self.member_user).exists())
+#
+#     def test_one_user_can_have_one_reaction_per_post(self):
+#         self.client.force_authenticate(user=self.member2_user)
+#
+#         url = reverse(
+#             'community:api_reactions_toggle',
+#             kwargs={'post_id': self.private_post.id}
+#         )
+#
+#         response1 = self.client.post(
+#             url,
+#             data={'type': Reaction.Type.LIKE},
+#             format='json'
+#         )
+#
+#         response2 = self.client.post(
+#             url,
+#             data={'type': Reaction.Type.HELPFUL},
+#             format='json'
+#         )
+#
+#         self.assertEqual(response1.status_code, status.HTTP_201_CREATED)
+#         self.assertEqual(response2.status_code, status.HTTP_200_OK)
+#
+#         reactions = Reaction.objects.filter(
+#             post=self.private_post,
+#             user=self.member2_user
+#         )
+#         self.assertEqual(reactions.count(), 1)
+#         self.assertEqual(reactions.first().type, Reaction.Type.HELPFUL)
+#
+#
+#
+# class BookmarkListPermissionsTest(APITestCase):
+#     def setUp(self):
+#         self.user = get_user_model().objects.create_user(
+#             username='user123',
+#             email='user123@mail.com',
+#             password='test123'
+#         )
+#
+#         self.empty_user = get_user_model().objects.create_user(
+#             username='empty123',
+#             email='empty123@mail.com',
+#             password='test123'
+#         )
+#
+#         self.other_user = get_user_model().objects.create_user(
+#             username='other123',
+#             email='other123@mail.com',
+#             password='test123'
+#         )
+#
+#         self.group_1 = StudyGroup.objects.create(
+#             owner=self.user,
+#             name='Django Group',
+#             description='Django practice group',
+#             visibility=StudyGroup.Visibility.PUBLIC,
+#             topic='Django'
+#         )
+#
+#         self.group_2 = StudyGroup.objects.create(
+#             owner=self.other_user,
+#             name='DRF Group',
+#             description='DRF practice group',
+#             visibility=StudyGroup.Visibility.PUBLIC,
+#             topic='DRF'
+#         )
+#
+#         self.post_1 = GroupPost.objects.create(
+#             group=self.group_1,
+#             author=self.user,
+#             title='Django bookmark post',
+#             content='Django content'
+#         )
+#
+#         self.post_2 = GroupPost.objects.create(
+#             group=self.group_2,
+#             author=self.other_user,
+#             title='DRF bookmark post',
+#             content='DRF content'
+#         )
+#
+#         self.other_post = GroupPost.objects.create(
+#             group=self.group_1,
+#             author=self.other_user,
+#             title='Other user bookmark post',
+#             content='Other content'
+#         )
+#
+#         self.bookmark_1 = Bookmark.objects.create(
+#             post=self.post_1,
+#             user=self.user
+#         )
+#
+#         self.bookmark_2 = Bookmark.objects.create(
+#             post=self.post_2,
+#             user=self.user
+#         )
+#
+#         self.other_user_bookmark = Bookmark.objects.create(
+#             post=self.other_post,
+#             user=self.other_user
+#         )
+#
+#     def test_logged_user_sees_all_his_bookmarks(self):
+#         self.client.force_authenticate(user=self.user)
+#
+#         response = self.client.get(reverse('community:api_my_bookmarks'))
+#
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#         ids = [bookmark['id'] for bookmark in response.data]
+#         posts = [bookmark['post'] for bookmark in response.data]
+#
+#         self.assertIn(self.bookmark_1.id, ids)
+#         self.assertIn(self.bookmark_2.id, ids)
+#         self.assertNotIn(self.other_user_bookmark.id, ids)
+#         self.assertIn(str(self.post_1), posts)
+#         self.assertIn(str(self.post_2), posts)
+#         self.assertTrue(posts[0] != posts[1])
+#
+#     def test_user_with_0_bookmarks_works_correct(self):
+#         self.client.force_authenticate(user=self.empty_user)
+#
+#         response = self.client.get(reverse('community:api_my_bookmarks'))
+#
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#         self.assertEqual(len(response.data), 0)
+#
+#
+#
+# class BookmarksTogglePermissionsTest(APITestCase):
+#     def setUp(self):
+#         self.owner_user = get_user_model().objects.create_user(
+#             username='owner123',
+#             email='owner123@mail.com',
+#             password='test123'
+#         )
+#
+#         self.member_user = get_user_model().objects.create_user(
+#             username='member123',
+#             email='member123@mail.com',
+#             password='test123'
+#         )
+#
+#         self.other_user = get_user_model().objects.create_user(
+#             username='other123',
+#             email='other123@mail.com',
+#             password='test123'
+#         )
+#
+#         self.public_user = get_user_model().objects.create_user(
+#             username='public123',
+#             email='public123@mail.com',
+#             password='test123'
+#         )
+#
+#         self.public_group = StudyGroup.objects.create(
+#             owner=self.owner_user,
+#             name='Public Bookmark Group',
+#             description='Public group for bookmark toggle tests',
+#             visibility=StudyGroup.Visibility.PUBLIC,
+#             topic='Django'
+#         )
+#
+#         self.private_group = StudyGroup.objects.create(
+#             owner=self.owner_user,
+#             name='Private Bookmark Group',
+#             description='Private group for bookmark toggle tests',
+#             visibility=StudyGroup.Visibility.PRIVATE,
+#             topic='DRF'
+#         )
+#
+#         GroupMembership.objects.create(
+#             group=self.private_group,
+#             user=self.member_user,
+#             role=GroupMembership.Role.MEMBER,
+#             status=GroupMembership.Status.ACTIVE
+#         )
+#
+#         self.public_post = GroupPost.objects.create(
+#             group=self.public_group,
+#             author=self.owner_user,
+#             title='Public bookmark post',
+#             content='Public bookmark content'
+#         )
+#
+#         self.private_post = GroupPost.objects.create(
+#             group=self.private_group,
+#             author=self.member_user,
+#             title='Private bookmark post',
+#             content='Private bookmark content'
+#         )
+#
+#         self.existing_bookmark = Bookmark.objects.create(
+#             post=self.private_post,
+#             user=self.member_user
+#         )
+#
+#     def test_member_can_create_bookmark(self):
+#         self.client.force_authenticate(user=self.owner_user)
+#
+#         response = self.client.post(reverse('community:api_bookmarks_toggle', kwargs={'post_id': self.private_post.id}))
+#
+#         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+#         self.assertTrue(Bookmark.objects.filter(user=self.owner_user, post=self.private_post).exists())
+#
+#     def test_reclick_deletes_bookmark(self):
+#         self.client.force_authenticate(user=self.member_user)
+#
+#         response = self.client.post(reverse('community:api_bookmarks_toggle', kwargs={'post_id': self.private_post.id}))
+#
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#         self.assertFalse(Bookmark.objects.filter(user=self.member_user, post=self.private_post).exists())
+#
+#     def test_repeated_bookmark_request_does_not_create_duplicate(self):
+#         self.client.force_authenticate(user=self.public_user)
+#
+#         url = reverse(
+#             'community:api_bookmarks_toggle',
+#             kwargs={'post_id': self.public_post.id}
+#         )
+#
+#         self.client.post(url, format='json')
+#
+#         bookmarks_count_after_first_request = Bookmark.objects.filter(
+#             post=self.public_post,
+#             user=self.public_user
+#         ).count()
+#
+#         self.client.post(url, format='json')
+#
+#         bookmarks_count_after_second_request = Bookmark.objects.filter(
+#             post=self.public_post,
+#             user=self.public_user
+#         ).count()
+#
+#         self.assertEqual(bookmarks_count_after_first_request, 1)
+#         self.assertEqual(bookmarks_count_after_second_request, 0)
+#
+#     def test_user_can_bookmark_public_group_post(self):
+#         self.client.force_authenticate(user=self.member_user)
+#
+#         response = self.client.post(reverse('community:api_bookmarks_toggle', kwargs={'post_id': self.public_post.id}))
+#
+#         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+#         self.assertTrue(Bookmark.objects.filter(post=self.public_post, user=self.member_user).exists())
+#
+#     def test_not_member_cant_bookmark_private_group_post(self):
+#         self.client.force_authenticate(user=self.other_user)
+#
+#         response = self.client.post(reverse('community:api_bookmarks_toggle', kwargs={'post_id': self.private_post.id}))
+#
+#         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+#         self.assertFalse(Bookmark.objects.filter(post=self.private_post, user=self.other_user).exists())
+#
+#     def test_moderator_group_can_bookmark_private_group_post(self):
+#         self.client.force_authenticate(user=self.owner_user)
+#
+#         response = self.client.post(reverse('community:api_bookmarks_toggle', kwargs={'post_id': self.private_post.id}))
+#
+#         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+#         self.assertTrue(Bookmark.objects.filter(user=self.owner_user, post=self.private_post).exists())
+#
+#     def test_anonymous_user_cant_bookmark_any_post(self):
+#         response = self.client.post(reverse('community:api_bookmarks_toggle', kwargs={'post_id': self.public_post.id}))
+#
+#         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+#
+#
+#
+
+class GroupFeedViewTest(TestCase):
     def setUp(self):
         self.owner_user = get_user_model().objects.create_user(
             username='owner123',
@@ -896,263 +1285,9 @@ class ReactionTogglePermissionsTest(APITestCase):
             password='test123'
         )
 
-        self.member2_user = get_user_model().objects.create_user(
-            username='member2123',
-            email='member2123@mail.com',
-            password='test2123'
-        )
-
-
         self.other_user = get_user_model().objects.create_user(
             username='other123',
             email='other123@mail.com',
-            password='test123'
-        )
-
-        self.private_group = StudyGroup.objects.create(
-            owner=self.owner_user,
-            name='Private Test Group',
-            description='Private group for reaction tests',
-            visibility=StudyGroup.Visibility.PRIVATE,
-            topic='Django'
-        )
-
-        self.public_group = StudyGroup.objects.create(
-            owner=self.owner_user,
-            name='Public Test Group',
-            description='Public group for reaction tests',
-            visibility=StudyGroup.Visibility.PUBLIC,
-            topic='DRF'
-        )
-
-        GroupMembership.objects.create(
-            group=self.private_group,
-            user=self.member_user,
-            role=GroupMembership.Role.MEMBER,
-            status=GroupMembership.Status.ACTIVE
-        )
-
-        GroupMembership.objects.create(
-            group=self.private_group,
-            user=self.member2_user,
-            role=GroupMembership.Role.MEMBER,
-            status=GroupMembership.Status.ACTIVE
-        )
-
-        self.private_post = GroupPost.objects.create(
-            group=self.private_group,
-            author=self.member_user,
-            title='Private post',
-            content='Private post content'
-        )
-
-        self.private_post_other = GroupPost.objects.create(
-            group=self.private_group,
-            author=self.member_user,
-            title='Other private post',
-            content='Other private post content'
-        )
-
-        self.public_post = GroupPost.objects.create(
-            group=self.public_group,
-            author=self.owner_user,
-            title='Public post',
-            content='Public post content'
-        )
-
-        self.private_post_reaction_1 = Reaction.objects.create(
-            post=self.private_post,
-            user=self.member_user,
-            type=Reaction.Type.LIKE
-        )
-
-
-        self.other_post_reaction = Reaction.objects.create(
-            post=self.private_post_other,
-            user=self.member_user,
-            type=Reaction.Type.CELEBRATE
-        )
-
-        self.public_post_reaction = Reaction.objects.create(
-            post=self.public_post,
-            user=self.other_user,
-            type=Reaction.Type.LIKE
-        )
-
-    def test_member_can_put_reaction(self):
-        self.client.force_authenticate(user=self.owner_user)
-
-        response = self.client.post(reverse('community:api_reactions_toggle', kwargs={'post_id': self.private_post.id}), data={
-            'type': Reaction.Type.CELEBRATE
-        })
-
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertTrue(Reaction.objects.filter(post=self.private_post.id, user=self.owner_user).exists())
-
-    def test_member_reclick_deletes_reaction(self):
-        self.client.force_authenticate(user=self.member_user)
-
-        response = self.client.post(reverse('community:api_reactions_toggle', kwargs={'post_id': self.private_post.id}),
-                                    data={
-                                        'type': Reaction.Type.LIKE
-                                    }, format='json')
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertFalse(Reaction.objects.filter(post=self.private_post.id, user=self.member_user).exists())
-
-    def test_one_user_can_have_one_reaction_per_post(self):
-        self.client.force_authenticate(user=self.member2_user)
-
-        url = reverse(
-            'community:api_reactions_toggle',
-            kwargs={'post_id': self.private_post.id}
-        )
-
-        response1 = self.client.post(
-            url,
-            data={'type': Reaction.Type.LIKE},
-            format='json'
-        )
-
-        response2 = self.client.post(
-            url,
-            data={'type': Reaction.Type.HELPFUL},
-            format='json'
-        )
-
-        self.assertEqual(response1.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response2.status_code, status.HTTP_200_OK)
-
-        reactions = Reaction.objects.filter(
-            post=self.private_post,
-            user=self.member2_user
-        )
-        self.assertEqual(reactions.count(), 1)
-        self.assertEqual(reactions.first().type, Reaction.Type.HELPFUL)
-
-
-
-class BookmarkListPermissionsTest(APITestCase):
-    def setUp(self):
-        self.user = get_user_model().objects.create_user(
-            username='user123',
-            email='user123@mail.com',
-            password='test123'
-        )
-
-        self.empty_user = get_user_model().objects.create_user(
-            username='empty123',
-            email='empty123@mail.com',
-            password='test123'
-        )
-
-        self.other_user = get_user_model().objects.create_user(
-            username='other123',
-            email='other123@mail.com',
-            password='test123'
-        )
-
-        self.group_1 = StudyGroup.objects.create(
-            owner=self.user,
-            name='Django Group',
-            description='Django practice group',
-            visibility=StudyGroup.Visibility.PUBLIC,
-            topic='Django'
-        )
-
-        self.group_2 = StudyGroup.objects.create(
-            owner=self.other_user,
-            name='DRF Group',
-            description='DRF practice group',
-            visibility=StudyGroup.Visibility.PUBLIC,
-            topic='DRF'
-        )
-
-        self.post_1 = GroupPost.objects.create(
-            group=self.group_1,
-            author=self.user,
-            title='Django bookmark post',
-            content='Django content'
-        )
-
-        self.post_2 = GroupPost.objects.create(
-            group=self.group_2,
-            author=self.other_user,
-            title='DRF bookmark post',
-            content='DRF content'
-        )
-
-        self.other_post = GroupPost.objects.create(
-            group=self.group_1,
-            author=self.other_user,
-            title='Other user bookmark post',
-            content='Other content'
-        )
-
-        self.bookmark_1 = Bookmark.objects.create(
-            post=self.post_1,
-            user=self.user
-        )
-
-        self.bookmark_2 = Bookmark.objects.create(
-            post=self.post_2,
-            user=self.user
-        )
-
-        self.other_user_bookmark = Bookmark.objects.create(
-            post=self.other_post,
-            user=self.other_user
-        )
-
-    def test_logged_user_sees_all_his_bookmarks(self):
-        self.client.force_authenticate(user=self.user)
-
-        response = self.client.get(reverse('community:api_my_bookmarks'))
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        ids = [bookmark['id'] for bookmark in response.data]
-        posts = [bookmark['post'] for bookmark in response.data]
-
-        self.assertIn(self.bookmark_1.id, ids)
-        self.assertIn(self.bookmark_2.id, ids)
-        self.assertNotIn(self.other_user_bookmark.id, ids)
-        self.assertIn(str(self.post_1), posts)
-        self.assertIn(str(self.post_2), posts)
-        self.assertTrue(posts[0] != posts[1])
-
-    def test_user_with_0_bookmarks_works_correct(self):
-        self.client.force_authenticate(user=self.empty_user)
-
-        response = self.client.get(reverse('community:api_my_bookmarks'))
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 0)
-
-
-
-class BookmarksTogglePermissionsTest(APITestCase):
-    def setUp(self):
-        self.owner_user = get_user_model().objects.create_user(
-            username='owner123',
-            email='owner123@mail.com',
-            password='test123'
-        )
-
-        self.member_user = get_user_model().objects.create_user(
-            username='member123',
-            email='member123@mail.com',
-            password='test123'
-        )
-
-        self.other_user = get_user_model().objects.create_user(
-            username='other123',
-            email='other123@mail.com',
-            password='test123'
-        )
-
-        self.public_user = get_user_model().objects.create_user(
-            username='public123',
-            email='public123@mail.com',
             password='test123'
         )
 
@@ -1193,77 +1328,868 @@ class BookmarksTogglePermissionsTest(APITestCase):
             content='Private bookmark content'
         )
 
-        self.existing_bookmark = Bookmark.objects.create(
+
+
+    def test_member_can_see_feed(self):
+        self.client.login(username='member123', password='test123')
+
+        response = self.client.get(reverse('community:feed', kwargs={'group_id': self.private_group.id}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Private bookmark post')
+        self.assertIn('group',response.context)
+        self.assertIn('posts',response.context)
+        self.assertTemplateUsed(response,'community/feed.html')
+
+        self.assertIn(self.private_post, response.context['posts'])
+        self.assertNotIn(self.public_post, response.context['posts'])
+
+    def test_not_member_cant_see_feed(self):
+        self.client.login(username='other123', password='test123')
+
+        response = self.client.get(reverse('community:feed', kwargs={'group_id': self.private_group.id}))
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_user_can_see_public_group_feed(self):
+        self.client.login(username='other123', password='test123')
+
+        response = self.client.get(reverse('community:feed', kwargs={'group_id': self.public_group.id}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('posts', response.context)
+        self.assertIn('group', response.context)
+        self.assertContains(response,'Public bookmark post')
+
+
+
+class PostDetailViewTest(TestCase):
+    def setUp(self):
+        self.owner_user = get_user_model().objects.create_user(
+            username='owner123',
+            email='owner123@mail.com',
+            password='test123'
+        )
+
+        self.member_user = get_user_model().objects.create_user(
+            username='member123',
+            email='member123@mail.com',
+            password='test123'
+        )
+
+        self.moderator_user = get_user_model().objects.create_user(
+            username='moder123',
+            email='moder123@mail.com',
+            password='test123'
+        )
+
+        self.other_user = get_user_model().objects.create_user(
+            username='other123',
+            email='other123@mail.com',
+            password='test123'
+        )
+
+        self.public_group = StudyGroup.objects.create(
+            owner=self.owner_user,
+            name='Public Bookmark Group',
+            description='Public group for bookmark toggle tests',
+            visibility=StudyGroup.Visibility.PUBLIC,
+            topic='Django'
+        )
+
+        self.private_group = StudyGroup.objects.create(
+            owner=self.owner_user,
+            name='Private Bookmark Group',
+            description='Private group for bookmark toggle tests',
+            visibility=StudyGroup.Visibility.PRIVATE,
+            topic='DRF'
+        )
+
+        GroupMembership.objects.create(
+            group=self.private_group,
+            user=self.member_user,
+            role=GroupMembership.Role.MEMBER,
+            status=GroupMembership.Status.ACTIVE
+        )
+
+        GroupMembership.objects.create(
+            group=self.private_group,
+            user=self.moderator_user,
+            role=GroupMembership.Role.MODERATOR,
+            status=GroupMembership.Status.ACTIVE
+        )
+
+        self.public_post = GroupPost.objects.create(
+            group=self.public_group,
+            author=self.owner_user,
+            title='Public bookmark post',
+            content='Public bookmark content'
+        )
+
+        self.private_post = GroupPost.objects.create(
+            group=self.private_group,
+            author=self.member_user,
+            title='Private bookmark post',
+            content='Private bookmark content'
+        )
+
+        self.comment = Comment.objects.create(
+            post=self.private_post,
+            author=self.member_user,
+            context='Test comment'
+        )
+
+        self.reaction = Reaction.objects.create(
+            post=self.private_post,
+            user=self.member_user,
+            type=Reaction.Type.LIKE
+        )
+
+        self.bookmark = Bookmark.objects.create(
             post=self.private_post,
             user=self.member_user
         )
 
-    def test_member_can_create_bookmark(self):
-        self.client.force_authenticate(user=self.owner_user)
+    def test_member_can_see_detail(self):
+        self.client.login(username='member123', password='test123')
 
-        response = self.client.post(reverse('community:api_bookmarks_toggle', kwargs={'post_id': self.private_post.id}))
+        response = self.client.get(reverse('community:post_detail', kwargs={'post_id': self.private_post.id}))
 
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertTrue(Bookmark.objects.filter(user=self.owner_user, post=self.private_post).exists())
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response,'Private bookmark post')
+        self.assertContains(response,'Private bookmark content')
+        self.assertContains(response, self.comment.context)
 
-    def test_reclick_deletes_bookmark(self):
-        self.client.force_authenticate(user=self.member_user)
+        self.assertEqual(response.context['comments_count'], 1)
+        self.assertEqual(response.context['reactions_count'], 1)
+        self.assertEqual(response.context['bookmarks_count'], 1)
 
-        response = self.client.post(reverse('community:api_bookmarks_toggle', kwargs={'post_id': self.private_post.id}))
+        self.assertIn('post', response.context)
+        self.assertTemplateUsed(response,'community/post_detail.html')
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertFalse(Bookmark.objects.filter(user=self.member_user, post=self.private_post).exists())
+    def test_owner_and_moderator_sees_manage_button(self):
+        self.client.login(username='owner123', password='test123')
+        response_owner = self.client.get(reverse('community:post_detail', kwargs={'post_id': self.private_post.id}))
+        self.client.logout()
 
-    def test_repeated_bookmark_request_does_not_create_duplicate(self):
-        self.client.force_authenticate(user=self.public_user)
+        self.client.login(username='moder123', password='test123')
+        response_moder = self.client.get(reverse('community:post_detail', kwargs={'post_id': self.private_post.id}))
 
-        url = reverse(
-            'community:api_bookmarks_toggle',
-            kwargs={'post_id': self.public_post.id}
+        self.assertEqual(response_moder.status_code, 200)
+        self.assertEqual(response_owner.status_code, 200)
+        self.assertTrue(response_owner.context['can_manage_post'])
+        self.assertTrue(response_moder.context['can_manage_post'])
+
+
+
+class PostCreateViewTest(TestCase):
+    def setUp(self):
+        self.owner_user = get_user_model().objects.create_user(
+            username='owner123',
+            email='owner123@mail.com',
+            password='test123'
         )
 
-        self.client.post(url, format='json')
+        self.member_user = get_user_model().objects.create_user(
+            username='member123',
+            email='member123@mail.com',
+            password='test123'
+        )
 
-        bookmarks_count_after_first_request = Bookmark.objects.filter(
-            post=self.public_post,
-            user=self.public_user
-        ).count()
+        self.moderator_user = get_user_model().objects.create_user(
+            username='moder123',
+            email='moder123@mail.com',
+            password='test123'
+        )
 
-        self.client.post(url, format='json')
+        self.other_user = get_user_model().objects.create_user(
+            username='other123',
+            email='other123@mail.com',
+            password='test123'
+        )
 
-        bookmarks_count_after_second_request = Bookmark.objects.filter(
-            post=self.public_post,
-            user=self.public_user
-        ).count()
+        self.public_group = StudyGroup.objects.create(
+            owner=self.owner_user,
+            name='Public Bookmark Group',
+            description='Public group for bookmark toggle tests',
+            visibility=StudyGroup.Visibility.PUBLIC,
+            topic='Django'
+        )
 
-        self.assertEqual(bookmarks_count_after_first_request, 1)
-        self.assertEqual(bookmarks_count_after_second_request, 0)
+        self.private_group = StudyGroup.objects.create(
+            owner=self.owner_user,
+            name='Private Bookmark Group',
+            description='Private group for bookmark toggle tests',
+            visibility=StudyGroup.Visibility.PRIVATE,
+            topic='DRF'
+        )
 
-    def test_user_can_bookmark_public_group_post(self):
-        self.client.force_authenticate(user=self.member_user)
+        GroupMembership.objects.create(
+            group=self.private_group,
+            user=self.member_user,
+            role=GroupMembership.Role.MEMBER,
+            status=GroupMembership.Status.ACTIVE
+        )
 
-        response = self.client.post(reverse('community:api_bookmarks_toggle', kwargs={'post_id': self.public_post.id}))
+        GroupMembership.objects.create(
+            group=self.private_group,
+            user=self.moderator_user,
+            role=GroupMembership.Role.MODERATOR,
+            status=GroupMembership.Status.ACTIVE
+        )
 
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertTrue(Bookmark.objects.filter(post=self.public_post, user=self.member_user).exists())
+        self.public_post = GroupPost.objects.create(
+            group=self.public_group,
+            author=self.owner_user,
+            title='Public bookmark post',
+            content='Public bookmark content'
+        )
 
-    def test_not_member_cant_bookmark_private_group_post(self):
-        self.client.force_authenticate(user=self.other_user)
+        self.private_post = GroupPost.objects.create(
+            group=self.private_group,
+            author=self.member_user,
+            title='Private bookmark post',
+            content='Private bookmark content'
+        )
 
-        response = self.client.post(reverse('community:api_bookmarks_toggle', kwargs={'post_id': self.private_post.id}))
+    def test_member_can_open_create_post_page(self):
+        self.client.login(username='member123', password='test123')
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertFalse(Bookmark.objects.filter(post=self.private_post, user=self.other_user).exists())
+        response = self.client.get(reverse('community:post_create', kwargs={'group_id': self.private_group.id}))
 
-    def test_moderator_group_can_bookmark_private_group_post(self):
-        self.client.force_authenticate(user=self.owner_user)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'community/post_create.html')
+        self.assertIn('form', response.context)
 
-        response = self.client.post(reverse('community:api_bookmarks_toggle', kwargs={'post_id': self.private_post.id}))
+    def test_member_can_create_post_page(self):
+        self.client.login(username='member123', password='test123')
 
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertTrue(Bookmark.objects.filter(user=self.owner_user, post=self.private_post).exists())
+        response = self.client.post(reverse('community:post_create', kwargs={'group_id': self.private_group.id}), data={
+            'title': "Creating post",
+            'content': "Content of post"
+        })
 
-    def test_anonymous_user_cant_bookmark_any_post(self):
-        response = self.client.post(reverse('community:api_bookmarks_toggle', kwargs={'post_id': self.public_post.id}))
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('community:feed', kwargs={'group_id': self.private_group.id}))
 
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+    def test_not_member_can_create_post(self):
+        self.client.login(username='other123', password='test123')
+
+        response = self.client.post(reverse('community:post_create', kwargs={'group_id': self.private_group.id}), data={
+            'title': "Creating post",
+            'content': "Content of post"
+        })
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(GroupPost.objects.filter(group=self.private_group, title="Creating post").exists())
+
+
+class PostUpdateViewTest(TestCase):
+    def setUp(self):
+        self.owner_user = get_user_model().objects.create_user(
+            username='owner123',
+            email='owner123@mail.com',
+            password='test123'
+        )
+        self.author_user = get_user_model().objects.create_user(
+            username='author123',
+            email='author123@mail.com',
+            password='test123'
+        )
+        self.other_user = get_user_model().objects.create_user(
+            username='other123',
+            email='other123@mail.com',
+            password='test123'
+        )
+
+        self.private_group = StudyGroup.objects.create(
+            owner=self.owner_user,
+            name='Private Group',
+            description='Private group',
+            visibility=StudyGroup.Visibility.PRIVATE,
+            topic='Django'
+        )
+
+        GroupMembership.objects.create(
+            group=self.private_group,
+            user=self.author_user,
+            role=GroupMembership.Role.MEMBER,
+            status=GroupMembership.Status.ACTIVE
+        )
+
+        self.post = GroupPost.objects.create(
+            group=self.private_group,
+            author=self.author_user,
+            title='Old title',
+            content='Old content'
+        )
+
+    def test_author_can_open_update_page(self):
+        self.client.login(username='author123', password='test123')
+
+        response = self.client.get(
+            reverse('community:post_update', kwargs={'post_id': self.post.id})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'community/post_create.html')
+        self.assertIn('form', response.context)
+        self.assertTrue(response.context['is_update'])
+
+    def test_author_can_update_post(self):
+        self.client.login(username='author123', password='test123')
+
+        response = self.client.post(
+            reverse('community:post_update', kwargs={'post_id': self.post.id}),
+            data={
+                'title': 'Updated web title',
+                'content': 'Updated web content'
+            }
+        )
+
+        self.assertEqual(response.status_code, 302)
+
+        self.post.refresh_from_db()
+
+        self.assertEqual(self.post.title, 'Updated web title')
+        self.assertEqual(self.post.content, 'Updated web content')
+
+    def test_not_author_cannot_update_post(self):
+        self.client.login(username='other123', password='test123')
+
+        response = self.client.post(
+            reverse('community:post_update', kwargs={'post_id': self.post.id}),
+            data={
+                'title': 'Wrong update',
+                'content': 'Wrong content'
+            }
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+        self.post.refresh_from_db()
+
+        self.assertEqual(self.post.title, 'Old title')
+        self.assertEqual(self.post.content, 'Old content')
+
+
+class PostDeleteViewTest(TestCase):
+    def setUp(self):
+        self.owner_user = get_user_model().objects.create_user(
+            username='owner123',
+            email='owner123@mail.com',
+            password='test123'
+        )
+        self.author_user = get_user_model().objects.create_user(
+            username='author123',
+            email='author123@mail.com',
+            password='test123'
+        )
+        self.moderator_user = get_user_model().objects.create_user(
+            username='moder123',
+            email='moder123@mail.com',
+            password='test123'
+        )
+        self.member_user = get_user_model().objects.create_user(
+            username='member123',
+            email='member123@mail.com',
+            password='test123'
+        )
+
+        self.private_group = StudyGroup.objects.create(
+            owner=self.owner_user,
+            name='Private Group',
+            description='Private group',
+            visibility=StudyGroup.Visibility.PRIVATE,
+            topic='Django'
+        )
+
+        GroupMembership.objects.create(
+            group=self.private_group,
+            user=self.author_user,
+            role=GroupMembership.Role.MEMBER,
+            status=GroupMembership.Status.ACTIVE
+        )
+
+        GroupMembership.objects.create(
+            group=self.private_group,
+            user=self.moderator_user,
+            role=GroupMembership.Role.MODERATOR,
+            status=GroupMembership.Status.ACTIVE
+        )
+
+        GroupMembership.objects.create(
+            group=self.private_group,
+            user=self.member_user,
+            role=GroupMembership.Role.MEMBER,
+            status=GroupMembership.Status.ACTIVE
+        )
+
+        self.post = GroupPost.objects.create(
+            group=self.private_group,
+            author=self.author_user,
+            title='Post to delete',
+            content='Post content'
+        )
+
+    def test_author_can_delete_post(self):
+        self.client.login(username='author123', password='test123')
+
+        response = self.client.post(
+            reverse('community:post_delete', kwargs={'post_id': self.post.id})
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(
+            GroupPost.objects.filter(id=self.post.id).exists()
+        )
+
+    def test_moderator_can_delete_post(self):
+        post = GroupPost.objects.create(
+            group=self.private_group,
+            author=self.author_user,
+            title='Post moderator deletes',
+            content='Post content'
+        )
+
+        self.client.login(username='moder123', password='test123')
+
+        response = self.client.post(
+            reverse('community:post_delete', kwargs={'post_id': post.id})
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(
+            GroupPost.objects.filter(id=post.id).exists()
+        )
+
+    def test_regular_member_cannot_delete_other_user_post(self):
+        self.client.login(username='member123', password='test123')
+
+        response = self.client.post(
+            reverse('community:post_delete', kwargs={'post_id': self.post.id})
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(
+            GroupPost.objects.filter(id=self.post.id).exists()
+        )
+
+    def test_owner_can_delete_post(self):
+        self.client.login(username='owner123', password='test123')
+
+        response = self.client.post(
+            reverse('community:post_delete', kwargs={'post_id': self.post.id})
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(
+            GroupPost.objects.filter(id=self.post.id).exists()
+        )
+
+    def test_regular_member_cannot_delete_other_user_post(self):
+        self.client.login(username='member123', password='test123')
+
+        response = self.client.post(
+            reverse('community:post_delete', kwargs={'post_id': self.post.id})
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(
+            GroupPost.objects.filter(id=self.post.id).exists()
+        )
+
+    class CommentWebViewTest(TestCase):
+        def setUp(self):
+            self.owner_user = get_user_model().objects.create_user(
+                username='owner123', email='owner123@mail.com', password='test123'
+            )
+            self.author_user = get_user_model().objects.create_user(
+                username='author123', email='author123@mail.com', password='test123'
+            )
+            self.member_user = get_user_model().objects.create_user(
+                username='member123', email='member123@mail.com', password='test123'
+            )
+            self.moderator_user = get_user_model().objects.create_user(
+                username='moder123', email='moder123@mail.com', password='test123'
+            )
+            self.other_user = get_user_model().objects.create_user(
+                username='other123', email='other123@mail.com', password='test123'
+            )
+
+            self.private_group = StudyGroup.objects.create(
+                owner=self.owner_user,
+                name='Private Group',
+                description='Private group',
+                visibility=StudyGroup.Visibility.PRIVATE,
+                topic='Django'
+            )
+
+            GroupMembership.objects.create(
+                group=self.private_group,
+                user=self.author_user,
+                role=GroupMembership.Role.MEMBER,
+                status=GroupMembership.Status.ACTIVE
+            )
+            GroupMembership.objects.create(
+                group=self.private_group,
+                user=self.member_user,
+                role=GroupMembership.Role.MEMBER,
+                status=GroupMembership.Status.ACTIVE
+            )
+            GroupMembership.objects.create(
+                group=self.private_group,
+                user=self.moderator_user,
+                role=GroupMembership.Role.MODERATOR,
+                status=GroupMembership.Status.ACTIVE
+            )
+
+            self.post = GroupPost.objects.create(
+                group=self.private_group,
+                author=self.author_user,
+                title='Test post',
+                content='Test post content'
+            )
+
+            self.comment = Comment.objects.create(
+                post=self.post,
+                author=self.author_user,
+                context='Original comment'
+            )
+
+        def test_member_can_create_comment(self):
+            self.client.login(username='member123', password='test123')
+
+            response = self.client.post(
+                reverse('community:comment_create', kwargs={'post_id': self.post.id}),
+                data={'context': 'New comment'}
+            )
+
+            self.assertEqual(response.status_code, 302)
+            self.assertTrue(
+                Comment.objects.filter(
+                    post=self.post,
+                    author=self.member_user,
+                    context='New comment'
+                ).exists()
+            )
+
+        def test_not_member_cannot_create_comment(self):
+            self.client.login(username='other123', password='test123')
+
+            response = self.client.post(
+                reverse('community:comment_create', kwargs={'post_id': self.post.id}),
+                data={'context': 'Wrong comment'}
+            )
+
+            self.assertEqual(response.status_code, 403)
+            self.assertFalse(
+                Comment.objects.filter(context='Wrong comment').exists()
+            )
+
+        def test_comment_author_can_update_comment(self):
+            self.client.login(username='author123', password='test123')
+
+            response = self.client.post(
+                reverse(
+                    'community:comment_update',
+                    kwargs={
+                        'post_id': self.post.id,
+                        'comment_id': self.comment.id
+                    }
+                ),
+                data={'context': 'Updated comment'}
+            )
+
+            self.assertEqual(response.status_code, 302)
+
+            self.comment.refresh_from_db()
+            self.assertEqual(self.comment.context, 'Updated comment')
+
+        def test_comment_author_can_delete_comment(self):
+            self.client.login(username='author123', password='test123')
+
+            response = self.client.post(
+                reverse(
+                    'community:comment_delete',
+                    kwargs={
+                        'post_id': self.post.id,
+                        'comment_id': self.comment.id
+                    }
+                )
+            )
+
+            self.assertEqual(response.status_code, 302)
+            self.assertFalse(
+                Comment.objects.filter(id=self.comment.id).exists()
+            )
+
+        def test_moderator_can_delete_comment(self):
+            comment = Comment.objects.create(
+                post=self.post,
+                author=self.member_user,
+                context='Comment for moderator delete'
+            )
+
+            self.client.login(username='moder123', password='test123')
+
+            response = self.client.post(
+                reverse(
+                    'community:comment_delete',
+                    kwargs={
+                        'post_id': self.post.id,
+                        'comment_id': comment.id
+                    }
+                )
+            )
+
+            self.assertEqual(response.status_code, 302)
+            self.assertFalse(Comment.objects.filter(id=comment.id).exists())
+
+        def test_owner_can_delete_comment(self):
+            comment = Comment.objects.create(
+                post=self.post,
+                author=self.member_user,
+                context='Comment for owner delete'
+            )
+
+            self.client.login(username='owner123', password='test123')
+
+            response = self.client.post(
+                reverse(
+                    'community:comment_delete',
+                    kwargs={
+                        'post_id': self.post.id,
+                        'comment_id': comment.id
+                    }
+                )
+            )
+
+            self.assertEqual(response.status_code, 302)
+            self.assertFalse(Comment.objects.filter(id=comment.id).exists())
+
+
+class ReactionBookmarkWebViewTest(TestCase):
+    def setUp(self):
+        self.owner_user = get_user_model().objects.create_user(
+            username='owner123', email='owner123@mail.com', password='test123'
+        )
+        self.member_user = get_user_model().objects.create_user(
+            username='member123', email='member123@mail.com', password='test123'
+        )
+        self.other_user = get_user_model().objects.create_user(
+            username='other123', email='other123@mail.com', password='test123'
+        )
+
+        self.private_group = StudyGroup.objects.create(
+            owner=self.owner_user,
+            name='Private Group',
+            description='Private group',
+            visibility=StudyGroup.Visibility.PRIVATE,
+            topic='Django'
+        )
+
+        GroupMembership.objects.create(
+            group=self.private_group,
+            user=self.member_user,
+            role=GroupMembership.Role.MEMBER,
+            status=GroupMembership.Status.ACTIVE
+        )
+
+        self.post = GroupPost.objects.create(
+            group=self.private_group,
+            author=self.member_user,
+            title='Reaction post',
+            content='Reaction post content'
+        )
+
+    def test_form_post_creates_reaction(self):
+        self.client.login(username='member123', password='test123')
+
+        response = self.client.post(
+            reverse('community:reaction_create', kwargs={'post_id': self.post.id}),
+            data={'type': Reaction.Type.LIKE}
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(
+            Reaction.objects.filter(
+                post=self.post,
+                user=self.member_user,
+                type=Reaction.Type.LIKE
+            ).exists()
+        )
+
+    def test_repeated_reaction_post_deletes_reaction(self):
+        Reaction.objects.create(
+            post=self.post,
+            user=self.member_user,
+            type=Reaction.Type.LIKE
+        )
+
+        self.client.login(username='member123', password='test123')
+
+        response = self.client.post(
+            reverse('community:reaction_create', kwargs={'post_id': self.post.id}),
+            data={
+                'type': Reaction.Type.LIKE,
+                'remove': '1'
+            }
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(
+            Reaction.objects.filter(
+                post=self.post,
+                user=self.member_user
+            ).exists()
+        )
+
+    def test_reaction_post_changes_existing_reaction(self):
+        Reaction.objects.create(
+            post=self.post,
+            user=self.member_user,
+            type=Reaction.Type.LIKE
+        )
+
+        self.client.login(username='member123', password='test123')
+
+        response = self.client.post(
+            reverse('community:reaction_create', kwargs={'post_id': self.post.id}),
+            data={'type': Reaction.Type.HELPFUL}
+        )
+
+        self.assertEqual(response.status_code, 302)
+
+        reaction = Reaction.objects.get(post=self.post, user=self.member_user)
+        self.assertEqual(reaction.type, Reaction.Type.HELPFUL)
+
+    def test_not_member_private_group_cannot_react(self):
+        self.client.login(username='other123', password='test123')
+
+        response = self.client.post(
+            reverse('community:reaction_create', kwargs={'post_id': self.post.id}),
+            data={'type': Reaction.Type.LIKE}
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(
+            Reaction.objects.filter(post=self.post, user=self.other_user).exists()
+        )
+
+    def test_form_post_creates_bookmark(self):
+        self.client.login(username='member123', password='test123')
+
+        response = self.client.post(
+            reverse('community:bookmark_create', kwargs={'post_id': self.post.id})
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(
+            Bookmark.objects.filter(
+                post=self.post,
+                user=self.member_user
+            ).exists()
+        )
+
+    def test_repeated_bookmark_post_deletes_bookmark(self):
+        Bookmark.objects.create(
+            post=self.post,
+            user=self.member_user
+        )
+
+        self.client.login(username='member123', password='test123')
+
+        response = self.client.post(
+            reverse('community:bookmark_create', kwargs={'post_id': self.post.id}),
+            data={'remove': '1'}
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(
+            Bookmark.objects.filter(
+                post=self.post,
+                user=self.member_user
+            ).exists()
+        )
+
+    def test_not_member_private_group_cannot_bookmark(self):
+        self.client.login(username='other123', password='test123')
+
+        response = self.client.post(
+            reverse('community:bookmark_create', kwargs={'post_id': self.post.id})
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(
+            Bookmark.objects.filter(post=self.post, user=self.other_user).exists()
+        )
+
+class BookmarkedPostsListViewTest(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username='user123', email='user123@mail.com', password='test123'
+        )
+        self.other_user = get_user_model().objects.create_user(
+            username='other123', email='other123@mail.com', password='test123'
+        )
+        self.empty_user = get_user_model().objects.create_user(
+            username='empty123', email='empty123@mail.com', password='test123'
+        )
+
+        self.group = StudyGroup.objects.create(
+            owner=self.user,
+            name='Bookmark Group',
+            description='Bookmark group',
+            visibility=StudyGroup.Visibility.PUBLIC,
+            topic='Django'
+        )
+
+        self.post = GroupPost.objects.create(
+            group=self.group,
+            author=self.user,
+            title='My bookmarked post',
+            content='Content'
+        )
+
+        self.other_post = GroupPost.objects.create(
+            group=self.group,
+            author=self.other_user,
+            title='Other bookmarked post',
+            content='Other content'
+        )
+
+        self.bookmark = Bookmark.objects.create(
+            post=self.post,
+            user=self.user
+        )
+
+        self.other_bookmark = Bookmark.objects.create(
+            post=self.other_post,
+            user=self.other_user
+        )
+
+    def test_user_sees_own_bookmarked_posts(self):
+        self.client.login(username='user123', password='test123')
+
+        response = self.client.get(reverse('community:posts_bookmarked'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'community/bookmarked_posts.html')
+        self.assertContains(response, 'My bookmarked post')
+
+    def test_user_does_not_see_other_users_bookmarks(self):
+        self.client.login(username='user123', password='test123')
+
+        response = self.client.get(reverse('community:posts_bookmarked'))
+
+        self.assertContains(response, 'My bookmarked post')
+        self.assertNotContains(response, 'Other bookmarked post')
+
+    def test_empty_bookmarks_page_works(self):
+        self.client.login(username='empty123', password='test123')
+
+        response = self.client.get(reverse('community:posts_bookmarked'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(list(response.context['bookmarks']), [])

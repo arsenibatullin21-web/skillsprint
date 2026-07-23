@@ -67,13 +67,6 @@ class GroupCreateView(LoginRequiredMixin,CreateView):
     def form_valid(self, form):
         form.instance.owner = self.request.user
         response = super().form_valid(form)
-
-        GroupMembership.objects.create(
-            group=self.object,
-            user=self.request.user,
-            role=GroupMembership.Role.OWNER,
-            status=GroupMembership.Status.ACTIVE
-        )
         return response
 
 class GroupExploreView(ListView):
