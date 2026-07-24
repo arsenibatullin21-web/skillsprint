@@ -36,7 +36,7 @@ def toggle_bookmark(user, post, remove=False):
         bookmark_object.delete()
         return None
 
-    bookmark = Bookmark.objects.get_or_create(
+    bookmark, created = Bookmark.objects.get_or_create(
         post=post,
         user=user
     )

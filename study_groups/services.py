@@ -44,14 +44,14 @@ def leave_group(user, group):
         user=user
     ).first()
 
-    if membership:
+    if membership and membership.status == GroupMembership.Status.ACTIVE:
         membership.delete()
         return 'Left'
     return 'NotMember'
 
 
 def accept_membership(membership):
-    if membership.status != GroupMembership.Status.ACTIVE:
+    if membership.status != GroupMembership.Status.PENDING:
         return 'NotPending'
     membership.status = GroupMembership.Status.ACTIVE
     membership.save(update_fields=['status'])
@@ -67,8 +67,12 @@ def reject_membership(membership):
     return "Rejected"
 
 def make_moderator(current_member, group, membership):
-    can_manage = group.owner == current_member.user or (
-        current_member and current_member.role == GroupMembership.Role.MODERATOR
+    can_manage = (
+        current_member
+        and (
+            group.owner == current_member.user
+            or current_member.role == GroupMembership.Role.MODERATOR
+        )
     )
 
     if not can_manage:
@@ -83,6 +87,9 @@ def make_moderator(current_member, group, membership):
 
 
 def remove_member(current_member, group, membership, current_user):
+    if membership.role == GroupMembership.Role.OWNER or membership.user == group.owner:
+        return None, 'Owner'
+
     can_manage = group.owner == current_user or (
             current_member
             and current_member.role == GroupMembership.Role.MODERATOR
@@ -92,9 +99,6 @@ def remove_member(current_member, group, membership, current_user):
         if current_member is None:
             return None, 'NotMember'
         return None, 'NoAccess'
-
-    if membership.role == GroupMembership.Role.OWNER or membership.user == group.owner:
-        return None, 'Owner'
 
     username = membership.user.username
     membership.delete()

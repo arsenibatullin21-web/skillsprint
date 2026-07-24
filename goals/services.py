@@ -5,6 +5,8 @@ from goals.models import ProgressEntry, LearningGoals
 
 
 def create_goal_with_milestone(user, form, formset):
+    if not form.is_valid():
+        return None, 'Invalid Form'
     if not formset.is_valid():
         return None, "Invalid Formset"
 
@@ -26,6 +28,8 @@ def create_goal_with_milestone(user, form, formset):
 
 
 def update_goal_with_milestones(goal, form, formset):
+    if not form.is_valid():
+        return None, 'InvalidForm'
     if not formset.is_valid():
         return None,'InvalidFormset'
 
